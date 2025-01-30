@@ -17,8 +17,9 @@ public class Decompile implements Callable<Integer> {
             "C:\\Program Files (x86)\\Steam\\steamapps\\common\\ProjectZomboid",
             "D:\\Program Files (x86)\\Steam\\steamapps\\common\\ProjectZomboid");
 
-    @Option(names = {"--rosetta-path"}, description = "Root path of a rosetta installation to use for variable names.")
-    private String rosettaPath = "rosetta";
+    @Option(names = {"--rosetta-path"}, description = "Root path of a rosetta installation to use for variable names." +
+            "The prefix $ indicates a resource path.")
+    private String rosettaPath = "$rosetta";
 
     @Option(names = {"--log-path"}, description = "Path to a folder to write log files in.")
     private File logPath = new File("logs");

@@ -3,10 +3,7 @@ package com.github.zomboiddecompiler.rosetta;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -14,11 +11,11 @@ import java.util.Objects;
 public class RosettaParser {
     public final List<RosettaNamespace> namespaces = new ArrayList<>();
 
-    public void parseJson(File file) throws FileNotFoundException {
+    public void parseJson(InputStream stream) throws FileNotFoundException {
         StringBuilder source = new StringBuilder();
-        try (FileReader fileReader = new FileReader(file)) {
-            while(fileReader.ready()) {
-                source.append((char)fileReader.read());
+        try (InputStreamReader reader = new InputStreamReader(stream)) {
+            while(reader.ready()) {
+                source.append((char)reader.read());
             }
         } catch (IOException e) {
             e.printStackTrace();

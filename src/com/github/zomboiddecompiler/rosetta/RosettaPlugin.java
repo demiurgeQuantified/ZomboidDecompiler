@@ -9,10 +9,17 @@ import org.jetbrains.java.decompiler.util.Pair;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.List;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public class RosettaPlugin implements Plugin {
-    private static List<RosettaNamespace> NAMESPACES;
     @Override
     public String id() {
         return "rosetta";
@@ -30,16 +37,39 @@ public class RosettaPlugin implements Plugin {
             return null;
         }
 
+        Path rosettaPath;
+
+        if (rosettaDir.startsWith("$")) {
+            URL rosettaURL = RosettaPlugin.class.getClassLoader().getResource(rosettaDir.substring(1));
+            if (rosettaURL == null) {
+                return null;
+            }
+
+            try {
+                rosettaPath = Paths.get(rosettaURL.toURI());
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+                return null;
+            }
+        } else {
+            rosettaPath = Paths.get(rosettaDir);
+        }
+
+        Path jsonFolder = rosettaPath.resolve("json");
+
         RosettaParser parser = new RosettaParser();
 
-        File rosettaDirFile = new File(rosettaDir, "json");
-        for (File file : rosettaDirFile.listFiles()) {
-            if (!file.getName().endsWith(".json")) continue;
-            try {
-                parser.parseJson(file);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
+        try (Stream<Path> files = Files.walk(jsonFolder)) {
+            for (Path file : files.toList()) {
+                if (!file.getFileName().toString().toLowerCase().endsWith(".json")) continue;
+                try {
+                    parser.parseJson(Files.newInputStream(file));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
 
         return new RosettaNamingFactory(parser.namespaces);

@@ -3,9 +3,6 @@
     <output-path>$PROJECT_DIR$/out/artifacts/ZomboidDecompiler_jar</output-path>
     <root id="archive" name="ZomboidDecompiler.jar">
       <element id="module-output" name="ZomboidDecompiler" />
-      <element id="directory" name="rosetta">
-        <element id="dir-copy" path="$PROJECT_DIR$/rosetta" />
-      </element>
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/json.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/picocli.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$PROJECT_DIR$/lib/vineflower.jar" path-in-jar="/" />
