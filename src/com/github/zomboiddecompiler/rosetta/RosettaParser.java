@@ -6,6 +6,7 @@ import org.json.JSONObject;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class RosettaParser {
@@ -30,6 +31,11 @@ public class RosettaParser {
         }
     }
 
+    private String parseType(JSONObject type) {
+        // FIXME: generic types are not supported
+        return type.getString("basic");
+    }
+
     private RosettaNamespace parseNamespace(JSONObject namespace, String name) {
         RosettaNamespace rosettaNamespace = new RosettaNamespace(name);
 
@@ -52,6 +58,21 @@ public class RosettaParser {
                                 methods.getJSONObject(i)));
             }
         }
+
+        JSONObject fields = clazz.optJSONObject("fields");
+        if (fields != null) {
+            JSONArray fieldKeys = fields.names();
+            for (Object keyObj : fieldKeys.toList()) {
+                if (!(keyObj instanceof String key)) {
+                    // throw a warning or something
+                    continue;
+                }
+                JSONObject field = fields.getJSONObject(key);
+                RosettaField rosettaField = new RosettaField(field.getString("name"),
+                                                             parseType(field.getJSONObject("type")));
+                rosettaClass.addField(rosettaField);
+            }
+        }
         
         // TODO: parse constructors
 
@@ -70,7 +91,7 @@ public class RosettaParser {
                 JSONObject parameter = parameters.getJSONObject(i);
                 rosettaMethod.addParameter(new RosettaMethod.Parameter(
                         parameter.getString("name"),
-                        parameter.getJSONObject("type").getString("basic")
+                        parseType(parameter.getJSONObject("type"))
                 ));
             }
         }

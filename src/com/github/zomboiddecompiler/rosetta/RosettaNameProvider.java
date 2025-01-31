@@ -37,6 +37,21 @@ public class RosettaNameProvider implements IVariableNameProvider {
         return index;
     }
 
+    /**
+     * Renames a parameter name if necessary to avoid shadowing a field.
+     * @param name Name of the parameter.
+     * @return If the name shadowed a field, a name that doesn't shadow a field. Otherwise the original name is returned.
+     */
+    private String renameParameterIfNeeded(String name) {
+        assert method.getClazz() != null;
+        if (method.getClazz().getFields().containsKey(name)) {
+            // it's technically possible that this causes a conflict but it would require really stupid
+            // field names that the game probably doesn't have any of
+            name = name + "x";
+        }
+        return name;
+    }
+
     @Override
     public Map<VarVersionPair, String> rename(Map<VarVersionPair, Pair<VarType, String>> variables) {
         Map<VarVersionPair, String> result = new LinkedHashMap<>();
@@ -47,15 +62,19 @@ public class RosettaNameProvider implements IVariableNameProvider {
                 assert !method.isStatic();
                 result.put(pair, "this");
             } else if (index < method.getParameters().size()) {
-                result.put(pair, method.getParameters().get(index).getName());
+                String name = method.getParameters().get(index).getName();
+                name = renameParameterIfNeeded(name);
+                result.put(pair, name);
             } else {
                 // TODO: count number of each type and use that count to name the variables
                 // e.g. what is currently isoZombie1, isoPlayer2 would become isoZombie1, isoPlayer1
                 // also if there is only one there's no need for a number at all
-                String typeName = RosettaNamingFactory.getTypeName(variables.get(pair).a);
-                typeName = typeName.substring(typeName.lastIndexOf(".") + 1);
-                typeName = typeName.substring(0, 1).toLowerCase() + typeName.substring(1);
-                result.put(pair, typeName + (index - method.getParameters().size() + 1));
+                String name = RosettaNamingFactory.getTypeName(variables.get(pair).a);
+                name = name.substring(name.lastIndexOf(".") + 1);
+                name = name.substring(0, 1).toLowerCase() + name.substring(1);
+                name += (index - method.getParameters().size() + 1);
+                result.put(pair, name);
+
             }
         }
 
@@ -65,15 +84,8 @@ public class RosettaNameProvider implements IVariableNameProvider {
     @Override
     public String renameAbstractParameter(String name, int index) {
         index = getTrueVariableIndex(index);
-
-//        if (index >= method.getParameters().size()) {
-//            System.out.println(
-//                    "Index of method parameter is higher than the number of parameters in " + method.getQualifiedName()
-//                            + " signature: " + method.getSignatureString());
-//            return name;
-//        }
-
-        return method.getParameters().get(index).getName();
+        name = method.getParameters().get(index).getName();
+        return renameParameterIfNeeded(name);
     }
 
     @Override
