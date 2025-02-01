@@ -5,6 +5,7 @@ import picocli.CommandLine;
 import picocli.CommandLine.*;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -17,7 +18,7 @@ public class Decompile implements Callable<Integer> {
             "C:\\Program Files (x86)\\Steam\\steamapps\\common\\ProjectZomboid",
             "D:\\Program Files (x86)\\Steam\\steamapps\\common\\ProjectZomboid");
 
-    @Option(names = {"--rosetta-path"}, description = "Root path of a rosetta installation to use for variable names." +
+    @Option(names = {"--rosetta-path"}, description = "Root path of a rosetta installation to use for variable names. " +
             "The prefix $ indicates a resource path.")
     private String rosettaPath = "$rosetta";
 
@@ -31,6 +32,12 @@ public class Decompile implements Callable<Integer> {
     private File inputPath = null;
     @Parameters(index = "1", arity = "0..1")
     private File outputPath = new File("output");
+
+    @Option(names = "-vf", arity = "2", description = "Argument name and value to pass through to Vineflower. " +
+            "Can be specified multiple times to pass multiple arguments. " +
+            "Leading dashes should not be included in the argument name.")
+    private String[] vineflowerArgs = null;
+
 
     @Override
     public Integer call() {
@@ -49,9 +56,14 @@ public class Decompile implements Callable<Integer> {
             }
         }
 
+        List<ZomboidDecompiler.VineflowerArgument> argsList = new ArrayList<>();
+        for (int i = 0; i < vineflowerArgs.length; i += 2) {
+            argsList.add(new ZomboidDecompiler.VineflowerArgument(vineflowerArgs[i], vineflowerArgs[i + 1]));
+        }
+
         ZomboidDecompiler decompiler = new ZomboidDecompiler(logPath);
         decompiler.setCopyDependencies(copyDependencies);
-        decompiler.decompile(inputPath, outputPath, rosettaPath);
+        decompiler.decompile(inputPath, outputPath, rosettaPath, argsList);
 
         return 0;
     }

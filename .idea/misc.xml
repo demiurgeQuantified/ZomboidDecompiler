@@ -11,6 +11,12 @@
     <option name="button2Url" value="" />
     <option name="customApplicationId" value="" />
   </component>
+  <component name="EntryPointsManager">
+    <writeAnnotations>
+      <writeAnnotation name="picocli.CommandLine.Option" />
+      <writeAnnotation name="picocli.CommandLine.Parameters" />
+    </writeAnnotations>
+  </component>
   <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="17" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>

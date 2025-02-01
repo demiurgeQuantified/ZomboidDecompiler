@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.decompiler.DirectoryResultSaver;
 import org.jetbrains.java.decompiler.main.decompiler.PrintStreamLogger;
+import org.jetbrains.java.decompiler.util.Pair;
 
 public class ZomboidDecompiler {
     /// Main program log.
@@ -58,7 +59,8 @@ public class ZomboidDecompiler {
      * @param gamePath Root directory of the game.
      * @param outputPath Path to write the output to.
      */
-    public void decompile(@NotNull File gamePath, @NotNull File outputPath, @Nullable String rosettaPath) {
+    public void decompile(@NotNull File gamePath, @NotNull File outputPath, @Nullable String rosettaPath,
+                          @Nullable List<VineflowerArgument> vineflowerArgs) {
         assert gamePath.exists();
 
         File zombieDirectory = new File(gamePath, "zombie");
@@ -106,7 +108,7 @@ public class ZomboidDecompiler {
             outputPath.mkdirs();
         }
 
-        Decompiler decompiler = Decompiler.builder()
+        Decompiler.Builder builder = Decompiler.builder()
                 .inputs(zombieDirectory)
                 .output(new DirectoryResultSaver(outputPath))
                 .option("ascii-strings", true)
@@ -117,8 +119,15 @@ public class ZomboidDecompiler {
                 //.option("log-level", "warn")
                 .libraries(dependencies.toArray(new File[0]))
                 .logger(vineflowerLog instanceof FileLogger fileLogger ? new PrintStreamLogger(fileLogger.getStream()) : null)
-                .option("rosetta-directory", rosettaPath)
-                .build();
+                .option("rosetta-directory", rosettaPath);
+
+        if (vineflowerArgs != null) {
+            for (VineflowerArgument argument: vineflowerArgs) {
+                builder.option(argument.parameter, argument.value);
+            }
+        }
+
+        Decompiler decompiler = builder.build();
 
         decompiler.decompile();
     }
@@ -174,6 +183,8 @@ public class ZomboidDecompiler {
             vineflowerLog = new DummyLogger();
         }
     }
+
+    public record VineflowerArgument(String parameter, Object value) {}
 
     static class DependencyFilter implements FilenameFilter {
         /// List of filenames that should be skipped.
