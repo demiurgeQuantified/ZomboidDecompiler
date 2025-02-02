@@ -36,7 +36,7 @@ public class Decompile implements Callable<Integer> {
     @Option(names = "-vf", arity = "2", description = "Argument name and value to pass through to Vineflower. " +
             "Can be specified multiple times to pass multiple arguments. " +
             "Leading dashes should not be included in the argument name.")
-    private String[] vineflowerArgs = null;
+    private String[] vineflowerArgs = new String[0];
 
 
     @Override
