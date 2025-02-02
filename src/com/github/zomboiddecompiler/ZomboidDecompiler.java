@@ -119,7 +119,8 @@ public class ZomboidDecompiler {
                 //.option("log-level", "warn")
                 .libraries(dependencies.toArray(new File[0]))
                 .logger(vineflowerLog instanceof FileLogger fileLogger ? new PrintStreamLogger(fileLogger.getStream()) : null)
-                .option("rosetta-directory", rosettaPath);
+                .option("rosetta-directory", rosettaPath)
+                .option("indent-string", "    ");
 
         if (vineflowerArgs != null) {
             for (VineflowerArgument argument: vineflowerArgs) {
