@@ -19,9 +19,9 @@ import org.jetbrains.java.decompiler.util.Pair;
 
 public class ZomboidDecompiler {
     /// Main program log.
-    private ILogger log;
+    public static ILogger log = new DummyLogger();
     /// Vineflower log.
-    private ILogger vineflowerLog;
+    private static ILogger vineflowerLog = new DummyLogger();
 
     public static final int VERSION_MAJOR = 0;
     public static final int VERSION_MINOR = 1;
@@ -131,6 +131,8 @@ public class ZomboidDecompiler {
         Decompiler decompiler = builder.build();
 
         decompiler.decompile();
+
+        log.log("Decompilation complete.");
     }
 
     static void copyFileOrDirectory(File source, File destination) throws IOException {
@@ -162,12 +164,7 @@ public class ZomboidDecompiler {
         }
     }
 
-    public ZomboidDecompiler() {
-        log = new DummyLogger();
-        vineflowerLog = new DummyLogger();
-    }
-
-    public ZomboidDecompiler(@NotNull File logDirectory) {
+    public static void initLoggers(File logDirectory) {
         logDirectory.mkdirs();
 
         try {

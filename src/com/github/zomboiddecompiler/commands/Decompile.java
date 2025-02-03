@@ -61,7 +61,9 @@ public class Decompile implements Callable<Integer> {
             argsList.add(new ZomboidDecompiler.VineflowerArgument(vineflowerArgs[i], vineflowerArgs[i + 1]));
         }
 
-        ZomboidDecompiler decompiler = new ZomboidDecompiler(logPath);
+        ZomboidDecompiler.initLoggers(logPath);
+
+        ZomboidDecompiler decompiler = new ZomboidDecompiler();
         decompiler.setCopyDependencies(copyDependencies);
         decompiler.decompile(inputPath, outputPath, rosettaPath, argsList);
 
