@@ -2,8 +2,11 @@ package com.github.zomboiddecompiler.rosetta;
 
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
+import org.jetbrains.java.decompiler.struct.StructClass;
+import org.jetbrains.java.decompiler.struct.StructField;
 import org.jetbrains.java.decompiler.struct.gen.VarType;
 import org.jetbrains.java.decompiler.util.Pair;
+import org.jetbrains.java.decompiler.util.collections.VBStyleCollection;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -11,6 +14,7 @@ import java.util.Objects;
 
 public class RosettaNameProvider implements IVariableNameProvider {
     private final RosettaMethod method;
+    private final StructClass vineflowerClass;
 
     /**
      * Gets the 'true' index of a variable from its 'raw' index.
@@ -43,12 +47,14 @@ public class RosettaNameProvider implements IVariableNameProvider {
      * @return If the name shadowed a field, a name that doesn't shadow a field. Otherwise the original name is returned.
      */
     private String renameParameterIfNeeded(String name) {
-        assert method.getClazz() != null;
-        if (method.getClazz().getFields().containsKey(name)) {
-            // it's technically possible that this causes a conflict but it would require really stupid
-            // field names that the game probably doesn't have any of
-            name = name + "x";
+        VBStyleCollection<StructField, String> fields = vineflowerClass.getFields();
+        for (StructField field : fields) {
+            if (Objects.equals(field.getName(), name)) {
+                name = "_" + name;
+                break;
+            }
         }
+
         return name;
     }
 
@@ -98,8 +104,9 @@ public class RosettaNameProvider implements IVariableNameProvider {
         // TODO: i don't know what this is even supposed to do lol
     }
 
-    public RosettaNameProvider(RosettaMethod method) {
+    public RosettaNameProvider(RosettaMethod method, StructClass clazz) {
         this.method = method;
+        this.vineflowerClass = clazz;
     }
 }
 

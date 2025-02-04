@@ -2,6 +2,7 @@ package com.github.zomboiddecompiler.rosetta;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.java.decompiler.code.CodeConstants;
+import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.IdentityRenamerFactory;
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
 import org.jetbrains.java.decompiler.main.extern.IVariableNamingFactory;
@@ -16,7 +17,7 @@ import java.util.Objects;
 public class RosettaNamingFactory implements IVariableNamingFactory {
     private final HashMap<String, RosettaClass> classes = new HashMap<>();
     // generic variable name provider for when there is no valid rosetta data
-    // TODO: replace this with a RosettaParser that does the fancy naming without the var names
+    // TODO: replace this with a RosettaNameProvider that does the fancy naming without the var names
     private static final IVariableNameProvider DEFAULT = new IdentityRenamerFactory();
 
     public static String getTypeName(VarType varType) {
@@ -85,7 +86,8 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
         }
 
         // TODO: there might be a decent performance benefit from pooling these
-        return new RosettaNameProvider(rosettaMethod);
+        return new RosettaNameProvider(rosettaMethod,
+                                       DecompilerContext.getContextProperty(DecompilerContext.CURRENT_CLASS));
     }
 
     RosettaNamingFactory(@NotNull List<RosettaNamespace> namespaces) {
