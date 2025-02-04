@@ -15,7 +15,6 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.decompiler.DirectoryResultSaver;
 import org.jetbrains.java.decompiler.main.decompiler.PrintStreamLogger;
-import org.jetbrains.java.decompiler.util.Pair;
 
 public class ZomboidDecompiler {
     /// Main program log.
@@ -75,6 +74,7 @@ public class ZomboidDecompiler {
         }
 
         if (copyDependencies) {
+            log.log("Copying dependencies...");
             File dependenciesPath = new File(outputPath, "dependencies");
             if (dependenciesPath.exists()) {
                 try {
@@ -95,6 +95,7 @@ public class ZomboidDecompiler {
                     log.log(Arrays.toString(e.getStackTrace()));
                 }
             }
+            log.log("Dependencies copied.");
         }
 
         outputPath = new File(outputPath, "zombie");
@@ -128,8 +129,9 @@ public class ZomboidDecompiler {
             }
         }
 
-        Decompiler decompiler = builder.build();
+        log.log("Beginning decompilation...");
 
+        Decompiler decompiler = builder.build();
         decompiler.decompile();
 
         log.log("Decompilation complete.");
