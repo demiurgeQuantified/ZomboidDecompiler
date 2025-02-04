@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class RosettaNameProvider implements IVariableNameProvider {
-    private final RosettaMethod method;
+    private final RosettaExecutable executable;
     private final StructClass vineflowerClass;
 
     /**
@@ -24,14 +24,15 @@ public class RosettaNameProvider implements IVariableNameProvider {
      * @return True index of the variable.
      */
     private int getTrueVariableIndex(int index) {
-        if (!method.isStatic() && !method.getParameters().isEmpty()) {
+        if (!(executable instanceof RosettaMethod method && method.isStatic())
+                && !executable.getParameters().isEmpty()) {
             index -= 1;
         }
 
         int i = 0;
         // FIXME: this doesn't account for wide local variables
-        while (i < index && i < method.getParameters().size()) {
-            String parameterType = method.getParameters().get(i).getType();
+        while (i < index && i < executable.getParameters().size()) {
+            String parameterType = executable.getParameters().get(i).getType();
             if (Objects.equals(parameterType, "long")
                     || Objects.equals(parameterType, "double")) {
                 index--;
@@ -65,10 +66,10 @@ public class RosettaNameProvider implements IVariableNameProvider {
             int index = getTrueVariableIndex(pair.var);
 
             if (index == -1) {
-                assert !method.isStatic();
+                assert !(executable instanceof RosettaMethod method && method.isStatic());
                 result.put(pair, "this");
-            } else if (index < method.getParameters().size()) {
-                String name = method.getParameters().get(index).getName();
+            } else if (index < executable.getParameters().size()) {
+                String name = executable.getParameters().get(index).getName();
                 name = renameParameterIfNeeded(name);
                 result.put(pair, name);
             } else {
@@ -78,7 +79,7 @@ public class RosettaNameProvider implements IVariableNameProvider {
                 String name = RosettaNamingFactory.getTypeName(variables.get(pair).a);
                 name = name.substring(name.lastIndexOf(".") + 1);
                 name = name.substring(0, 1).toLowerCase() + name.substring(1);
-                name += (index - method.getParameters().size() + 1);
+                name += (index - executable.getParameters().size() + 1);
                 result.put(pair, name);
 
             }
@@ -90,7 +91,7 @@ public class RosettaNameProvider implements IVariableNameProvider {
     @Override
     public String renameAbstractParameter(String name, int index) {
         index = getTrueVariableIndex(index);
-        name = method.getParameters().get(index).getName();
+        name = executable.getParameters().get(index).getName();
         return renameParameterIfNeeded(name);
     }
 
@@ -104,8 +105,8 @@ public class RosettaNameProvider implements IVariableNameProvider {
         // TODO: i don't know what this is even supposed to do lol
     }
 
-    public RosettaNameProvider(RosettaMethod method, StructClass clazz) {
-        this.method = method;
+    public RosettaNameProvider(RosettaExecutable executable, StructClass clazz) {
+        this.executable = executable;
         this.vineflowerClass = clazz;
     }
 }

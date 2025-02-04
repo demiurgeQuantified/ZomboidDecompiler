@@ -6,7 +6,6 @@ import org.json.JSONObject;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 
 public class RosettaParser {
@@ -74,7 +73,13 @@ public class RosettaParser {
             }
         }
         
-        // TODO: parse constructors
+        JSONArray constructors = clazz.optJSONArray("constructors");
+        if (constructors != null) {
+            for (int i = 0; i < constructors.length(); i++) {
+                rosettaClass.addConstructor(
+                        parseConstructor(constructors.getJSONObject(i)));
+            }
+        }
 
         return rosettaClass;
     }
@@ -89,7 +94,7 @@ public class RosettaParser {
         if (parameters != null) {
             for (int i = 0; i < parameters.length(); i++) {
                 JSONObject parameter = parameters.getJSONObject(i);
-                rosettaMethod.addParameter(new RosettaMethod.Parameter(
+                rosettaMethod.addParameter(new RosettaParameter(
                         parameter.getString("name"),
                         parseType(parameter.getJSONObject("type"))
                 ));
@@ -107,5 +112,22 @@ public class RosettaParser {
         }
 
         return rosettaMethod;
+    }
+
+    private RosettaConstructor parseConstructor(JSONObject constructor) {
+        RosettaConstructor rosettaConstructor = new RosettaConstructor();
+
+        JSONArray parameters = constructor.optJSONArray("parameters");
+        if (parameters != null) {
+            for (int i = 0; i < parameters.length(); i++) {
+                JSONObject parameter = parameters.getJSONObject(i);
+                rosettaConstructor.addParameter(new RosettaParameter(
+                        parameter.getString("name"),
+                        parseType(parameter.getJSONObject("type"))
+                ));
+            }
+        }
+
+        return rosettaConstructor;
     }
 }

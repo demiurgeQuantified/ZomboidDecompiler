@@ -11,6 +11,7 @@ public class RosettaClass {
     private final String name;
     private final List<RosettaMethod> methods = new ArrayList<>();
     private final Map<String, RosettaField> fields = new HashMap<>();
+    private final List<RosettaConstructor> constructors = new ArrayList<>();
 
     RosettaNamespace namespace = null;
 
@@ -22,6 +23,22 @@ public class RosettaClass {
     public void addField(RosettaField field) {
         fields.put(field.getName(), field);
         field.clazz = this;
+    }
+
+    public void addConstructor(RosettaConstructor constructor) {
+        constructors.add(constructor);
+        constructor.clazz = this;
+    }
+
+    /**
+     * Returns a more specific name, useful for debugging.
+     * @return Qualified name of the class.
+     */
+    public String getQualifiedName() {
+        if (namespace != null) {
+            return namespace.getName() + "." + name;
+        }
+        return name;
     }
 
     public List<RosettaMethod> getMethods() {
@@ -38,6 +55,10 @@ public class RosettaClass {
 
     public @Nullable RosettaNamespace getNamespace() {
         return namespace;
+    }
+
+    public List<RosettaConstructor> getConstructors() {
+        return constructors;
     }
 
     RosettaClass(String name) {

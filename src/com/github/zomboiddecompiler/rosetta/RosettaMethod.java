@@ -5,11 +5,12 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RosettaMethod {
+public class RosettaMethod implements RosettaExecutable {
     private final String name;
-    private String returnType;
+    private String returnType = "void";
+    private String returnName = "";
 
-    private final List<Parameter> parameters = new ArrayList<>();
+    private final List<RosettaParameter> parameters = new ArrayList<>();
     private boolean isStatic = false;
 
     RosettaClass clazz = null;
@@ -21,10 +22,7 @@ public class RosettaMethod {
     public String getQualifiedName() {
         String qualifiedName = name;
         if (clazz != null) {
-            qualifiedName = clazz.getName() + "#" + qualifiedName;
-            if (clazz.namespace != null) {
-                qualifiedName = clazz.namespace.getName() + "." + qualifiedName;
-            }
+            qualifiedName = clazz.getQualifiedName() + "#" + qualifiedName;
         }
         return qualifiedName;
     }
@@ -35,8 +33,8 @@ public class RosettaMethod {
      */
     public String getSignatureString() {
         StringBuilder signature = new StringBuilder(name).append("(");
-        for (Parameter parameter: parameters) {
-            signature.append(parameter.type).append(" ").append(parameter.name).append(", ");
+        for (RosettaParameter parameter: parameters) {
+            signature.append(parameter.getType()).append(" ").append(parameter.getName()).append(", ");
         }
         signature.append(") -> ").append(returnType);
         return signature.toString();
@@ -50,12 +48,18 @@ public class RosettaMethod {
         return returnType;
     }
 
-    public void addParameter(Parameter parameter) {
-        parameters.add(parameter);
-        parameter.method = this;
+    public void setReturnName(String returnName) {
+        this.returnName = returnName;
     }
 
-    public List<Parameter> getParameters() {
+    public String getReturnName() { return returnName; }
+
+    public void addParameter(RosettaParameter parameter) {
+        parameters.add(parameter);
+    }
+
+    @Override
+    public List<RosettaParameter> getParameters() {
         return parameters;
     }
 
@@ -77,29 +81,5 @@ public class RosettaMethod {
 
     public RosettaMethod(String name) {
         this.name = name;
-    }
-
-    public static class Parameter {
-        private final String name;
-        private final String type;
-
-        RosettaMethod method = null;
-
-        public String getName() {
-            return name;
-        }
-
-        public String getType() {
-            return type;
-        }
-
-        public @Nullable RosettaMethod getMethod() {
-            return method;
-        }
-
-        public Parameter(String name, String type) {
-            this.name = name;
-            this.type = type;
-        }
     }
 }

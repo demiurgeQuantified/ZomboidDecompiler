@@ -32,8 +32,33 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
             case DOUBLE -> "double";
             case LONG -> "long";
             case SHORT -> "short";
-            default -> varType.value.substring(varType.value.lastIndexOf("/") + 1).replace("$", ".");
+            default -> varType.value.substring(
+                    varType.value.lastIndexOf("/") + 1).replace("$", ".");
         };
+    }
+
+    static boolean signaturesMatch(RosettaExecutable executable, MethodDescriptor descriptor) {
+        if (!Objects.equals(
+                executable.getReturnType(),
+                getTypeName(descriptor.ret))) {
+            return false;
+        }
+
+        VarType[] parameterTypes = descriptor.params;
+        if (parameterTypes.length != executable.getParameters().size()) {
+            return false;
+        }
+
+        for (int i = 0; i < parameterTypes.length; i++) {
+            VarType parameterType = parameterTypes[i];
+            String rosettaType = executable.getParameters().get(i).getType();
+
+            if (!Objects.equals(getTypeName(parameterType), rosettaType)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
@@ -43,50 +68,39 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
             return DEFAULT;
         }
 
-        boolean isStaticMethod = (method.getAccessFlags() & CodeConstants.ACC_STATIC) != 0;
-
-        RosettaMethod rosettaMethod = null;
-        for (RosettaMethod classMethod : rosettaClass.getMethods()) {
-            if (!Objects.equals(classMethod.getName(), method.getName())) continue;
-            if (isStaticMethod != classMethod.isStatic()) continue;
-            MethodDescriptor descriptor = method.methodDescriptor();
-            if (descriptor != null) {
-                if (!Objects.equals(
-                        classMethod.getReturnType(),
-                        getTypeName(descriptor.ret))) {
-                    continue;
-                }
-
-                VarType[] parameterTypes = descriptor.params;
-                if (parameterTypes.length != classMethod.getParameters().size()) continue;
-
-                boolean parametersMatch = true;
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    VarType parameterType = parameterTypes[i];
-                    String rosettaType = classMethod.getParameters().get(i).getType();
-
-                    if (!Objects.equals(getTypeName(parameterType), rosettaType)) {
-                        parametersMatch = false;
-                        break;
-                    }
-                }
-
-                if (!parametersMatch) {
-                    continue;
-                }
-            }
-
-            rosettaMethod = classMethod;
-
-            break;
+        MethodDescriptor descriptor = method.methodDescriptor();
+        if (descriptor == null) {
+            return DEFAULT;
         }
 
-        if (rosettaMethod == null) {
+        RosettaExecutable executable = null;
+        if (Objects.equals(method.getName(), "<init>")) { // constructor
+            for (RosettaConstructor constructor : rosettaClass.getConstructors()) {
+                if (signaturesMatch(constructor, descriptor)) {
+                    executable = constructor;
+                    break;
+                }
+            }
+        } else {
+            boolean isStaticMethod = method.hasModifier(CodeConstants.ACC_STATIC);
+
+            for (RosettaMethod classMethod : rosettaClass.getMethods()) {
+                if (!Objects.equals(classMethod.getName(), method.getName())) continue;
+                if (isStaticMethod != classMethod.isStatic()) continue;
+
+                if (signaturesMatch(classMethod, descriptor)) {
+                    executable = classMethod;
+                    break;
+                }
+            }
+        }
+
+        if (executable == null) {
             return DEFAULT;
         }
 
         // TODO: there might be a decent performance benefit from pooling these
-        return new RosettaNameProvider(rosettaMethod,
+        return new RosettaNameProvider(executable,
                                        DecompilerContext.getContextProperty(DecompilerContext.CURRENT_CLASS));
     }
 
