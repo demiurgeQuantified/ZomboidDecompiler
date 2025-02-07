@@ -95,8 +95,8 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
         }
 
         if (executable == null) {
-            ZomboidDecompiler.log.log("No rosetta data found for "
-                    + method.getClassQualifiedName() + "#" + method.getName());
+//            ZomboidDecompiler.log.log("No rosetta data found for "
+//                    + method.getClassQualifiedName() + "#" + method.getName());
             return DEFAULT;
         }
 
