@@ -3,6 +3,7 @@ module ZomboidDecompiler {
     requires org.json;
     requires vineflower;
     requires info.picocli;
+    requires java.compiler;
 
     provides org.jetbrains.java.decompiler.api.plugin.Plugin with
             com.github.zomboiddecompiler.rosetta.RosettaPlugin;

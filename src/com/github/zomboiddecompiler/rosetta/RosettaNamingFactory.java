@@ -1,9 +1,9 @@
 package com.github.zomboiddecompiler.rosetta;
 
+import com.github.zomboiddecompiler.ZomboidDecompiler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
-import org.jetbrains.java.decompiler.main.IdentityRenamerFactory;
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
 import org.jetbrains.java.decompiler.main.extern.IVariableNamingFactory;
 import org.jetbrains.java.decompiler.struct.StructMethod;
@@ -16,9 +16,8 @@ import java.util.Objects;
 
 public class RosettaNamingFactory implements IVariableNamingFactory {
     private final HashMap<String, RosettaClass> classes = new HashMap<>();
-    // generic variable name provider for when there is no valid rosetta data
-    // TODO: replace this with a RosettaNameProvider that does the fancy naming without the var names
-    private static final IVariableNameProvider DEFAULT = new IdentityRenamerFactory();
+    /// Generic variable name provider for when there is no rosetta data
+    private static final IVariableNameProvider DEFAULT = new RosettaGenericNameProvider();
 
     public static String getTypeName(VarType varType) {
         assert varType.value != null;
@@ -96,10 +95,11 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
         }
 
         if (executable == null) {
+            ZomboidDecompiler.log.log("No rosetta data found for "
+                    + method.getClassQualifiedName() + "#" + method.getName());
             return DEFAULT;
         }
 
-        // TODO: there might be a decent performance benefit from pooling these
         return new RosettaNameProvider(executable,
                                        DecompilerContext.getContextProperty(DecompilerContext.CURRENT_CLASS));
     }

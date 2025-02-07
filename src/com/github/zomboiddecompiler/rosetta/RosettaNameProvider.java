@@ -1,6 +1,5 @@
 package com.github.zomboiddecompiler.rosetta;
 
-import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
 import org.jetbrains.java.decompiler.struct.StructClass;
 import org.jetbrains.java.decompiler.struct.StructField;
@@ -8,11 +7,10 @@ import org.jetbrains.java.decompiler.struct.gen.VarType;
 import org.jetbrains.java.decompiler.util.Pair;
 import org.jetbrains.java.decompiler.util.collections.VBStyleCollection;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
-public class RosettaNameProvider implements IVariableNameProvider {
+/// Name provider for methods with Rosetta parameter names.
+public class RosettaNameProvider extends AbstractRosettaNameProvider {
     private final RosettaExecutable executable;
     private final StructClass vineflowerClass;
 
@@ -62,7 +60,11 @@ public class RosettaNameProvider implements IVariableNameProvider {
     @Override
     public Map<VarVersionPair, String> rename(Map<VarVersionPair, Pair<VarType, String>> variables) {
         Map<VarVersionPair, String> result = new LinkedHashMap<>();
-        for (VarVersionPair pair : variables.keySet()) {
+        Map<VarVersionPair, VarType> unknownVariables = new LinkedHashMap<>();
+        Set<String> takenNames = new HashSet<>();
+
+        for (var entry : variables.entrySet()) {
+            VarVersionPair pair = entry.getKey();
             int index = getTrueVariableIndex(pair.var);
 
             if (index == -1) {
@@ -72,18 +74,14 @@ public class RosettaNameProvider implements IVariableNameProvider {
                 String name = executable.getParameters().get(index).getName();
                 name = renameParameterIfNeeded(name);
                 result.put(pair, name);
+                takenNames.add(name);
             } else {
-                // TODO: count number of each type and use that count to name the variables
-                // e.g. what is currently isoZombie1, isoPlayer2 would become isoZombie1, isoPlayer1
-                // also if there is only one there's no need for a number at all
-                String name = RosettaNamingFactory.getTypeName(variables.get(pair).a);
-                name = name.substring(name.lastIndexOf(".") + 1);
-                name = name.substring(0, 1).toLowerCase() + name.substring(1);
-                name += (index - executable.getParameters().size() + 1);
-                result.put(pair, name);
-
+                unknownVariables.put(pair, entry.getValue().a);
             }
         }
+
+        result.putAll(
+                assignUnknownVariableNames(unknownVariables, takenNames));
 
         return result;
     }
@@ -98,11 +96,6 @@ public class RosettaNameProvider implements IVariableNameProvider {
     @Override
     public String renameParameter(int flags, VarType type, String name, int index) {
         return renameAbstractParameter(name, index);
-    }
-
-    @Override
-    public void addParentContext(IVariableNameProvider iVariableNameProvider) {
-        // TODO: i don't know what this is even supposed to do lol
     }
 
     public RosettaNameProvider(RosettaExecutable executable, StructClass clazz) {
