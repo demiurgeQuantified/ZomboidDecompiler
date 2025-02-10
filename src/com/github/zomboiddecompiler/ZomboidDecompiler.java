@@ -110,7 +110,7 @@ public class ZomboidDecompiler {
         }
 
         Decompiler.Builder builder = Decompiler.builder()
-                .inputs(zombieDirectory)
+                .inputs(new ZomboidContextSource(gamePath))
                 .output(new DirectoryResultSaver(outputPath))
                 .option("ascii-strings", true)
                 .option("banner",
