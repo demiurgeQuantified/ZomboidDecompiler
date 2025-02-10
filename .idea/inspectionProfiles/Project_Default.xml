@@ -11,5 +11,17 @@
       </option>
       <option name="IGNORE_FIELDS_USED_IN_MULTIPLE_METHODS" value="true" />
     </inspection_tool>
+    <inspection_tool class="ReturnNull" enabled="true" level="WARNING" enabled_by_default="false">
+      <scope name="Project Files" level="WARNING" enabled="true">
+        <option name="m_reportObjectMethods" value="true" />
+        <option name="m_reportArrayMethods" value="true" />
+        <option name="m_reportCollectionMethods" value="true" />
+        <option name="m_ignorePrivateMethods" value="false" />
+      </scope>
+      <option name="m_reportObjectMethods" value="true" />
+      <option name="m_reportArrayMethods" value="true" />
+      <option name="m_reportCollectionMethods" value="true" />
+      <option name="m_ignorePrivateMethods" value="false" />
+    </inspection_tool>
   </profile>
 </component>
