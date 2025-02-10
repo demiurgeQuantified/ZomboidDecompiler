@@ -65,6 +65,12 @@ public class ZomboidDecompiler {
         File zombieDirectory = new File(gamePath, "zombie");
         assert zombieDirectory.exists();
 
+        if (outputPath.exists()) {
+            clearDirectory(outputPath);
+        } else {
+            outputPath.mkdirs();
+        }
+
         ArrayList<File> dependencies = new ArrayList<>();
         for (File file : Objects.requireNonNull(gamePath.listFiles(DependencyFilter.filter))) {
             if (file.isFile() || (file.isDirectory() && containsClassFiles(file))) {
@@ -96,17 +102,6 @@ public class ZomboidDecompiler {
                 }
             }
             log.log("Dependencies copied.");
-        }
-
-        outputPath = new File(outputPath, "zombie");
-        if (outputPath.exists()) {
-            try {
-                clearDirectory(outputPath);
-            } catch (IOException e) {
-                log.log(Arrays.toString(e.getStackTrace()));
-            }
-        } else {
-            outputPath.mkdirs();
         }
 
         Decompiler.Builder builder = Decompiler.builder()
