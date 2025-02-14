@@ -1,6 +1,5 @@
 package com.github.zomboiddecompiler.rosetta;
 
-import com.github.zomboiddecompiler.ZomboidDecompiler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
@@ -104,7 +103,7 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
                                        DecompilerContext.getContextProperty(DecompilerContext.CURRENT_CLASS));
     }
 
-    RosettaNamingFactory(@NotNull List<RosettaNamespace> namespaces) {
+    RosettaNamingFactory(List<RosettaNamespace> namespaces) {
         for (RosettaNamespace namespace : namespaces) {
             for (RosettaClass clazz: namespace.getClasses()) {
                 // convert the class name into the format vineflower gives them

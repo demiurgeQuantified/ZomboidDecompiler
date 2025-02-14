@@ -1,7 +1,5 @@
 package com.github.zomboiddecompiler;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
@@ -23,7 +21,6 @@ public class FileLogger implements ILogger {
         exception.printStackTrace(stream);
     }
 
-    @NotNull
     public PrintStream getStream() {
         return stream;
     }
