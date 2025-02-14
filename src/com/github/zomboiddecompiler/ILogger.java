@@ -1,7 +1,6 @@
 package com.github.zomboiddecompiler;
 
-import org.jetbrains.annotations.NotNull;
-
 public interface ILogger {
-    void log(@NotNull String text);
+    void log(String text);
+    void log(Exception exception);
 }

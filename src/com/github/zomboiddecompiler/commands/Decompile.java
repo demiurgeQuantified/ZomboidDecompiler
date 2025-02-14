@@ -5,6 +5,9 @@ import picocli.CommandLine;
 import picocli.CommandLine.*;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -27,11 +30,14 @@ public class Decompile implements Callable<Integer> {
 
     @Option(names = {"--copy-dependencies"}, description = "Whether to copy all game dependencies to the output folder.")
     private boolean copyDependencies = true;
+    @Option(names = {"--jar-game"}, description = "If true, copies the game's classes into a jar file." +
+            "Useful for recompiling single files.")
+    private boolean jarGame = true;
 
     @Parameters(index = "0", arity = "0..1")
-    private File inputPath = null;
+    private Path inputPath = null;
     @Parameters(index = "1", arity = "0..1")
-    private File outputPath = new File("output");
+    private Path outputPath = Paths.get("output");
 
     @Option(names = "-vf", arity = "2", description = "Argument name and value to pass through to Vineflower. " +
             "Can be specified multiple times to pass multiple arguments. " +
@@ -43,14 +49,14 @@ public class Decompile implements Callable<Integer> {
     public Integer call() {
         if (inputPath == null) {
             for (String dir : possibleGameDirectories) {
-                inputPath = new File(dir);
-                if (inputPath.exists()) {
+                inputPath = Paths.get(dir);
+                if (Files.exists(inputPath)) {
                     System.out.println("Detected game install at " + dir);
                     break;
                 }
                 // TODO: check if the game path has a ProjectZomboid64.exe
             }
-            if (inputPath == null || !inputPath.exists()) {
+            if (inputPath == null || !Files.exists(inputPath)) {
                 System.out.println("Cannot detect game directory, aborting.");
                 return 1;
             }
@@ -65,6 +71,7 @@ public class Decompile implements Callable<Integer> {
 
         ZomboidDecompiler decompiler = new ZomboidDecompiler();
         decompiler.setCopyDependencies(copyDependencies);
+        decompiler.setJarGame(jarGame);
         decompiler.decompile(inputPath, outputPath, rosettaPath, argsList);
 
         return 0;

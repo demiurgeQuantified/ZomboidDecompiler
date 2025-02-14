@@ -14,8 +14,13 @@ public class FileLogger implements ILogger {
     }
 
     @Override
-    public void log(@NotNull String text) {
+    public void log(String text) {
         stream.println(text);
+    }
+
+    @Override
+    public void log(Exception exception) {
+        exception.printStackTrace(stream);
     }
 
     @NotNull

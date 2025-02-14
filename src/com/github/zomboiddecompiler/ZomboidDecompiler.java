@@ -2,15 +2,13 @@ package com.github.zomboiddecompiler;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.nio.file.Path;
+import java.util.*;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.decompiler.DirectoryResultSaver;
@@ -27,9 +25,14 @@ public class ZomboidDecompiler {
     public static final int VERSION_PATCH = 3;
 
     private boolean copyDependencies = false;
+    private boolean jarGame = false;
 
     public void setCopyDependencies(boolean copyDependencies) {
         this.copyDependencies = copyDependencies;
+    }
+
+    public void setJarGame(boolean jarGame) {
+        this.jarGame = jarGame;
     }
 
     /**
@@ -37,20 +40,71 @@ public class ZomboidDecompiler {
      * @param directory The directory to scan.
      * @return Whether the directory contains any class files.
      */
-    static boolean containsClassFiles(@NotNull File directory) {
-        assert directory.isDirectory();
+    static boolean containsClassFiles(Path directory) {
+        assert Files.isDirectory(directory);
 
-        for (File file : directory.listFiles()) {
-            if (file.isDirectory()) {
-                if (containsClassFiles(file)) {
-                    return true;
-                }
-            } else if (file.getName().endsWith(".class")) {
-                return true;
+        try {
+            return Files.list(directory).anyMatch(path ->
+                Files.isDirectory(path) ? containsClassFiles(path) : path.getFileName().toString().endsWith(".class"));
+        } catch (IOException e) {
+            log.log(e);
+            return false;
+        }
+    }
+
+    private boolean copyDependencies(List<Path> dependencies, Path outDirectory) {
+        if (Files.exists(outDirectory)) {
+            clearDirectory(outDirectory);
+        } else {
+            try {
+                Files.createDirectory(outDirectory);
+            } catch (IOException e) {
+                log.log(e);
+                return false;
             }
         }
 
-        return false;
+        try (FileSystem zipFileSystem = FileSystems.newFileSystem(
+                outDirectory.resolve("loose-dependencies.jar"), ENV))
+        {
+            for (Path dependency : dependencies) {
+                String dependencyName = dependency.getFileName().toString();
+                if (Files.isDirectory(dependency)) {
+                    copyFileOrDirectory(dependency, zipFileSystem.getPath(dependencyName));
+                } else {
+                    copyFileOrDirectory(dependency, outDirectory.resolve(dependencyName));
+                }
+            }
+        } catch (IOException e) {
+            log.log(e);
+        }
+        return true;
+    }
+
+    Set<String> BAD_DEPENDENCY_NAMES = Set.of("zombie", "media", "steamapps", "mods", "Workshop");
+
+    private List<Path> findDependencies(Path dir) {
+        List<Path> dependencies = new ArrayList<>();
+        try {
+            Files.list(dir)
+                    .filter(
+                            path -> !BAD_DEPENDENCY_NAMES.contains(
+                                    path.getFileName().toString()))
+                    .forEach(
+                            path -> {
+                                if (Files.isDirectory(path)
+                                        ? containsClassFiles(path)
+                                        : path.getFileName().toString().endsWith(".jar"))
+                                {
+                                    log.log("Discovered dependency: " + path);
+                                    dependencies.add(path);
+                                }
+                            }
+                    );
+        } catch (IOException e) {
+            log.log(e);
+        }
+        return dependencies;
     }
 
     /**
@@ -58,63 +112,60 @@ public class ZomboidDecompiler {
      * @param gamePath Root directory of the game.
      * @param outputPath Path to write the output to.
      */
-    public void decompile(@NotNull File gamePath, @NotNull File outputPath, @Nullable String rosettaPath,
+    public void decompile(Path gamePath, Path outputPath, @Nullable String rosettaPath,
                           @Nullable List<VineflowerArgument> vineflowerArgs) {
-        assert gamePath.exists();
+        assert Files.exists(gamePath);
 
-        File zombieDirectory = new File(gamePath, "zombie");
-        assert zombieDirectory.exists();
+        Path zombieDirectory = gamePath.resolve("zombie");
+        assert Files.exists(zombieDirectory);
 
-        if (outputPath.exists()) {
+        if (Files.exists(outputPath)) {
             clearDirectory(outputPath);
         } else {
-            outputPath.mkdirs();
-        }
-
-        ArrayList<File> dependencies = new ArrayList<>();
-        for (File file : Objects.requireNonNull(gamePath.listFiles(DependencyFilter.filter))) {
-            if (file.isFile() || (file.isDirectory() && containsClassFiles(file))) {
-                log.log("Discovered dependency: " + file.getName());
-                dependencies.add(file);
+            try {
+                Files.createDirectories(outputPath);
+            } catch (IOException e) {
+                log.log(e);
+                log.log("Could not access output directory. Aborting decompilation.");
+                return;
             }
         }
+
+        List<Path> dependencies = findDependencies(gamePath);
 
         if (copyDependencies) {
             log.log("Copying dependencies...");
-            File dependenciesPath = new File(outputPath, "dependencies");
-            if (dependenciesPath.exists()) {
-                try {
-                    clearDirectory(dependenciesPath);
-                } catch (IOException e) {
-                    log.log(Arrays.toString(e.getStackTrace()));
-                }
+            if (copyDependencies(dependencies, outputPath.resolve("dependencies"))) {
+                log.log("Dependencies copied.");
             } else {
-                dependenciesPath.mkdirs();
+                log.log("Dependency copying failed. Previous log messages may give details.");
             }
+        }
 
-            for (File dependency : dependencies) {
-                try {
-                    // FIXME: for directories, this copies the entire directory
-                    // it should only copy .class files
-                    copyFileOrDirectory(dependency, new File(dependenciesPath, dependency.getName()));
-                } catch (IOException e) {
-                    log.log(Arrays.toString(e.getStackTrace()));
-                }
-            }
-            log.log("Dependencies copied.");
+        if (jarGame) {
+            log.log("Jarring game...");
+            zipDirectory(zombieDirectory, outputPath.resolve("zombie.jar"));
+            log.log("Game jarred.");
+        }
+
+        File[] dependencyFiles = new File[dependencies.size()];
+        for (int i = 0; i < dependencies.size(); i++) {
+            dependencyFiles[i] = dependencies.get(i).toFile();
         }
 
         Decompiler.Builder builder = Decompiler.builder()
-                .inputs(new ZomboidContextSource(gamePath))
-                .output(new DirectoryResultSaver(outputPath))
+                .inputs(new ZomboidContextSource(gamePath.toFile()))
+                .output(new DirectoryResultSaver(outputPath.toFile()))
                 .option("ascii-strings", true)
                 .option("banner",
                         String.format("// Decompiled on %tc with Zomboid Decompiler v%d.%d.%d using Vineflower.\n",
                                       System.currentTimeMillis(), VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH))
                 .option("error-message", "Please report this to the Zomboid Decompiler issue tracker at https://github.com/demiurgeQuantified/ZomboidDecompiler/issues with the file name and game version.")
                 //.option("log-level", "warn")
-                .libraries(dependencies.toArray(new File[0]))
-                .logger(vineflowerLog instanceof FileLogger fileLogger ? new PrintStreamLogger(fileLogger.getStream()) : null)
+                .libraries(dependencyFiles)
+                .logger(vineflowerLog instanceof FileLogger fileLogger
+                        ? new PrintStreamLogger(fileLogger.getStream())
+                        : null)
                 .option("rosetta-directory", rosettaPath)
                 .option("indent-string", "    ");
 
@@ -132,32 +183,66 @@ public class ZomboidDecompiler {
         log.log("Decompilation complete.");
     }
 
-    static void copyFileOrDirectory(File source, File destination) throws IOException {
-        assert source.exists();
+    private static final Map<String, String> ENV = Map.of(
+            "create", "true"
+    );
 
-        if (source.isDirectory()) {
-            destination.mkdir();
-            for (File file : Objects.requireNonNull(source.listFiles())) {
-                copyFileOrDirectory(file, new File(destination, file.getName()));
+    /**
+     * Zips the contents of a directory.
+     * @param in Path of the directory to zip.
+     * @param out Path to write the zip to. Extension should be included.
+     */
+    static void zipDirectory(Path in, Path out) {
+        try {
+            try (FileSystem zipFileSystem = FileSystems.newFileSystem(out, ENV)) {
+                copyFileOrDirectory(in, zipFileSystem.getPath(
+                        in.getFileName().toString()
+                ));
             }
+        } catch (IOException e) {
+            log.log(e);
+        }
+    }
+
+    static void copyFileOrDirectory(Path source, Path destination) throws IOException {
+        assert Files.exists(source);
+
+        if (Files.isDirectory(source)) {
+            Files.createDirectory(destination);
+            Files.list(source).forEach(
+                    path -> {
+                        try {
+                            copyFileOrDirectory(path, destination.resolve(
+                                    path.getFileName().toString()));
+                        } catch (IOException e) {
+                            log.log(e);
+                        }
+                    });
         } else {
-            Files.copy(source.toPath(), destination.toPath());
+            Files.copy(source, destination);
         }
     }
 
     /**
      * Recursively deletes every file in a directory.
      * @param directory The directory to clear.
-     * @throws IOException If access is denied to delete a file.
      */
-    static void clearDirectory(File directory) throws IOException {
-        assert directory.isDirectory();
+    private static void clearDirectory(Path directory) {
+        assert Files.isDirectory(directory);
 
-        for (File file : Objects.requireNonNull(directory.listFiles())) {
-            if (file.isDirectory()) {
-                clearDirectory(file);
-            }
-            file.delete();
+        try {
+            Files.list(directory).forEach(path -> {
+                try {
+                    if (Files.isDirectory(path)) {
+                        clearDirectory(path);
+                    }
+                    Files.delete(path);
+                } catch (IOException e) {
+                    log.log(e);
+                }
+            });
+        } catch (IOException e) {
+            log.log(e);
         }
     }
 
@@ -174,27 +259,10 @@ public class ZomboidDecompiler {
         try {
             vineflowerLog = new FileLogger(new File(logDirectory, "vineflower.log"));
         } catch (FileNotFoundException e) {
-            log.log(Arrays.toString(e.getStackTrace()));
+            log.log(e);
             vineflowerLog = new DummyLogger();
         }
     }
 
     public record VineflowerArgument(String parameter, Object value) {}
-
-    static class DependencyFilter implements FilenameFilter {
-        /// List of filenames that should be skipped.
-        private static final List<String> badNames = Arrays.asList("zombie", "media", "steamapps", "mods", "Workshop");
-        /// Instance of the filter to use (as it has no state)
-        public static final DependencyFilter filter = new DependencyFilter();
-
-        @Override
-        public boolean accept(File dir, String name) {
-            if (name.contains(".") && !name.endsWith(".jar")) {
-                return false;
-            }
-            return !badNames.contains(name);
-        }
-
-        private DependencyFilter() {}
-    }
 }
