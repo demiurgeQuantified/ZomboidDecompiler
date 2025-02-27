@@ -11,7 +11,7 @@ import java.util.Objects;
 public class RosettaParser {
     public final List<RosettaNamespace> namespaces = new ArrayList<>();
 
-    public void parseJson(InputStream stream) throws FileNotFoundException {
+    public void parseJson(InputStream stream) {
         StringBuilder source = new StringBuilder();
         try (InputStreamReader reader = new InputStreamReader(stream)) {
             while(reader.ready()) {

@@ -54,6 +54,8 @@ public class RosettaPlugin implements Plugin {
 
         Path jsonFolder = rosettaPath.resolve("json");
 
+        assert Files.exists(jsonFolder);
+
         RosettaParser parser = new RosettaParser();
 
         try (Stream<Path> files = Files.walk(jsonFolder)) {

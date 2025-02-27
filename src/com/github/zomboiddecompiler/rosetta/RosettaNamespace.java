@@ -22,5 +22,5 @@ public class RosettaNamespace {
 
     public RosettaNamespace(String name) {
         this.name = name;
-    };
+    }
 }
