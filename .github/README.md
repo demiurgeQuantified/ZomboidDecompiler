@@ -1,7 +1,7 @@
 # Zomboid Decompiler
 Simplified decompilation tool for Project Zomboid powered by [Vineflower](https://github.com/Vineflower/vineflower).
 ## Usage
-### Windows
+### Windows, Steam
 1) Install [Java 17](https://www.oracle.com/fr/java/technologies/downloads/) or above.
 2) Download the latest .jar from [Releases](https://github.com/demiurgeQuantified/ZomboidDecompiler/releases/latest).
 3) Create a new folder and put the jar inside it.
@@ -14,12 +14,12 @@ If nothing happens after a few minutes, try the below instructions for Other ins
 1) Install [Java 17](https://www.oracle.com/fr/java/technologies/downloads/) or above.
 2) Download the latest .jar from [Releases](https://github.com/demiurgeQuantified/ZomboidDecompiler/releases/latest).
 3) Create a new folder and put the jar inside it.
-4) Open your command line and execute ``java -jar ZomboidDecompiler.jar "PATH"``, replacing `PATH` with the path to your game installation's `ProjectZomboid` folder.
+4) Open your command line to that folder and execute ``java -jar ZomboidDecompiler.jar "PATH"``, replacing `PATH` with the path to your game installation's `ProjectZomboid` folder.
    - Example: ``java -jar ZomboidDecompiler.jar "D:\Program Files (x86)\Steam\steamapps\common\ProjectZomboid"``
 5) Wait a few minutes for decompilation to complete.
 
 ## Features
-- (For most users) single click game decompilation.
+- Single click game decompilation.
 - Automatic gathering of game dependencies as decompilation context and for future recompilation.
 - Renaming of function parameters using Rosetta data.
 - Renaming of other variables according to type to enhance readability.
