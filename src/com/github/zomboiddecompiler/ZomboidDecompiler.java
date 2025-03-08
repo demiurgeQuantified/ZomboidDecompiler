@@ -114,10 +114,19 @@ public class ZomboidDecompiler {
      */
     public void decompile(Path gamePath, Path outputPath, @Nullable String rosettaPath,
                           @Nullable List<VineflowerArgument> vineflowerArgs) {
-        assert Files.exists(gamePath);
+        assert Files.exists(gamePath) && Files.isDirectory(gamePath);
+
+        if (Files.exists(gamePath.resolve("projectzomboid.sh"))) {
+            log.log("gamePath seems to be a Linux installation (projectzomboid.sh detected)");
+            gamePath = gamePath.resolve("projectzomboid");
+            if (!Files.exists(gamePath) || !Files.isDirectory(gamePath)) {
+                log.log("Not a valid Linux installation, aborting.");
+                return;
+            }
+        }
 
         Path zombieDirectory = gamePath.resolve("zombie");
-        if (!Files.exists(zombieDirectory)) {
+        if (!Files.exists(zombieDirectory) || !Files.isDirectory(zombieDirectory)) {
             log.log("Zombie directory does not exist. Aborting decompilation.");
             return;
         }
