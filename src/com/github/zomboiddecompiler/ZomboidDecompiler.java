@@ -117,7 +117,10 @@ public class ZomboidDecompiler {
         assert Files.exists(gamePath);
 
         Path zombieDirectory = gamePath.resolve("zombie");
-        assert Files.exists(zombieDirectory);
+        if (!Files.exists(zombieDirectory)) {
+            log.log("Zombie directory does not exist. Aborting decompilation.");
+            return;
+        }
 
         if (Files.exists(outputPath)) {
             clearDirectory(outputPath);
@@ -144,8 +147,11 @@ public class ZomboidDecompiler {
 
         if (jarGame) {
             log.log("Jarring game...");
-            zipDirectory(zombieDirectory, outputPath.resolve("zombie.jar"));
-            log.log("Game jarred.");
+            if (zipDirectory(zombieDirectory, outputPath.resolve("zombie.jar"))) {
+                log.log("Game jarred.");
+            } else {
+                log.log("Game jarring failed. Aborting because this usually means something is wrong with the game installation.");
+            }
         }
 
         File[] dependencyFiles = new File[dependencies.size()];
@@ -192,7 +198,7 @@ public class ZomboidDecompiler {
      * @param in Path of the directory to zip.
      * @param out Path to write the zip to. Extension should be included.
      */
-    static void zipDirectory(Path in, Path out) {
+    static boolean zipDirectory(Path in, Path out) {
         try {
             try (FileSystem zipFileSystem = FileSystems.newFileSystem(out, ENV)) {
                 copyFileOrDirectory(in, zipFileSystem.getPath(
@@ -201,7 +207,9 @@ public class ZomboidDecompiler {
             }
         } catch (IOException e) {
             log.log(e);
+            return false;
         }
+        return true;
     }
 
     static void copyFileOrDirectory(Path source, Path destination) throws IOException {
