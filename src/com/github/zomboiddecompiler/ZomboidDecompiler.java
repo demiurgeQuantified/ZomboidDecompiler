@@ -160,6 +160,7 @@ public class ZomboidDecompiler {
                 log.log("Game jarred.");
             } else {
                 log.log("Game jarring failed. Aborting because this usually means something is wrong with the game installation.");
+                return;
             }
         }
 
