@@ -8,6 +8,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.stream.Stream;
 
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.api.Decompiler;
@@ -43,8 +44,8 @@ public class ZomboidDecompiler {
     static boolean containsClassFiles(Path directory) {
         assert Files.isDirectory(directory);
 
-        try {
-            return Files.list(directory).anyMatch(path ->
+        try(Stream<Path> files = Files.list(directory)) {
+            return files.anyMatch(path ->
                 Files.isDirectory(path) ? containsClassFiles(path) : path.getFileName().toString().endsWith(".class"));
         } catch (IOException e) {
             log.log(e);
@@ -85,22 +86,21 @@ public class ZomboidDecompiler {
 
     private List<Path> findDependencies(Path dir) {
         List<Path> dependencies = new ArrayList<>();
-        try {
-            Files.list(dir)
-                    .filter(
-                            path -> !BAD_DEPENDENCY_NAMES.contains(
-                                    path.getFileName().toString()))
-                    .forEach(
-                            path -> {
-                                if (Files.isDirectory(path)
-                                        ? containsClassFiles(path)
-                                        : path.getFileName().toString().endsWith(".jar"))
-                                {
-                                    log.log("Discovered dependency: " + path);
-                                    dependencies.add(path);
-                                }
+        try(Stream<Path> files = Files.list(dir)) {
+            files.filter(
+                        path -> !BAD_DEPENDENCY_NAMES.contains(
+                                path.getFileName().toString()))
+                .forEach(
+                        path -> {
+                            if (Files.isDirectory(path)
+                                    ? containsClassFiles(path)
+                                    : path.getFileName().toString().endsWith(".jar"))
+                            {
+                                log.log("Discovered dependency: " + path);
+                                dependencies.add(path);
                             }
-                    );
+                        }
+                );
         } catch (IOException e) {
             log.log(e);
         }
@@ -179,7 +179,7 @@ public class ZomboidDecompiler {
                 .option("error-message", "Please report this to the Zomboid Decompiler issue tracker at https://github.com/demiurgeQuantified/ZomboidDecompiler/issues with the file name and game version.")
                 //.option("log-level", "warn")
                 .libraries(dependencyFiles)
-                .logger(vineflowerLog instanceof FileLogger fileLogger
+                .logger(vineflowerLog instanceof StreamLogger fileLogger
                         ? new PrintStreamLogger(fileLogger.getStream())
                         : null)
                 .option("rosetta-directory", rosettaPath)
@@ -227,15 +227,17 @@ public class ZomboidDecompiler {
 
         if (Files.isDirectory(source)) {
             Files.createDirectory(destination);
-            Files.list(source).forEach(
-                    path -> {
-                        try {
-                            copyFileOrDirectory(path, destination.resolve(
-                                    path.getFileName().toString()));
-                        } catch (IOException e) {
-                            log.log(e);
-                        }
-                    });
+            try (Stream<Path> files = Files.list(source)) {
+                files.forEach(
+                        path -> {
+                            try {
+                                copyFileOrDirectory(path, destination.resolve(
+                                        path.getFileName().toString()));
+                            } catch (IOException e) {
+                                log.log(e);
+                            }
+                        });
+            }
         } else {
             Files.copy(source, destination);
         }
@@ -248,8 +250,8 @@ public class ZomboidDecompiler {
     private static void clearDirectory(Path directory) {
         assert Files.isDirectory(directory);
 
-        try {
-            Files.list(directory).forEach(path -> {
+        try (Stream<Path> files = Files.list(directory)) {
+            files.forEach(path -> {
                 try {
                     if (Files.isDirectory(path)) {
                         clearDirectory(path);
