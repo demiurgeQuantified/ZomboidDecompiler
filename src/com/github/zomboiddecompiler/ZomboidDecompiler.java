@@ -265,20 +265,26 @@ public class ZomboidDecompiler {
     }
 
     public static void initLoggers(File logDirectory) {
-        logDirectory.mkdirs();
-
-        try {
-            log = new FileLogger(new File(logDirectory, "main.log"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            log = new DummyLogger();
+        if (!logDirectory.mkdirs()) {
+            System.out.println("Failed to create logs directory (probably a permissions issue). Logging to console instead.");
+            log = new StreamLogger(System.out);
+            vineflowerLog = new StreamLogger(System.out);
         }
 
         try {
-            vineflowerLog = new FileLogger(new File(logDirectory, "vineflower.log"));
+            log = new StreamLogger(new File(logDirectory, "main.log"));
         } catch (FileNotFoundException e) {
+            log.log("Failed to create main log (probably a permissions issue). Logging to console instead.");
+            log = new StreamLogger(System.out);
             log.log(e);
-            vineflowerLog = new DummyLogger();
+        }
+
+        try {
+            vineflowerLog = new StreamLogger(new File(logDirectory, "vineflower.log"));
+        } catch (FileNotFoundException e) {
+            log.log("Failed to create vineflower log (probably a permissions issue). Logging to console instead.");
+            log.log(e);
+            vineflowerLog = new StreamLogger(System.out);
         }
     }
 

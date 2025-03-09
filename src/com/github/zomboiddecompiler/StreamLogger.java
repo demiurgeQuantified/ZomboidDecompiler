@@ -4,11 +4,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 
-public class FileLogger implements ILogger {
+public class StreamLogger implements ILogger {
     private final PrintStream stream;
 
-    FileLogger(File file) throws FileNotFoundException {
+    StreamLogger(File file) throws FileNotFoundException {
         stream = new PrintStream(file);
+    }
+
+    StreamLogger(PrintStream stream) {
+        this.stream = stream;
     }
 
     @Override
