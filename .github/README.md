@@ -28,7 +28,6 @@ If nothing happens after a few minutes, try the below instructions for Other ins
 Launch with ``-h`` or ``--help`` for information about command line parameters.
 
 ## Building
-To build, Zomboid Decompiler is dependent on [Vineflower](https://github.com/Vineflower/vineflower), [JSON-java](https://github.com/stleary/JSON-java), and [picocli](https://github.com/remkop/picocli), as well as [Jetbrains' java annotations](https://github.com/JetBrains/java-annotations).
-This project does not use a build system so these must be provided as jars as at compile time.
-If using IntelliJ IDEA to build, these are expected to be placed in the `lib/` folder.
-You can include Rosetta files in `resources/` to be used as default.
+ZomboidDecompiler can be built with `gradlew build`.  
+You can include Rosetta files in `src/main/resources/rosetta/` to be used as defaults when no rosetta directory is passed.
+The standard binaries in Releases are built with the latest Rosetta included, but when building you must provide these yourself.
