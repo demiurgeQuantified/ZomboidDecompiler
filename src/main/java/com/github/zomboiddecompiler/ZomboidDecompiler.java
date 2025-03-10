@@ -10,6 +10,9 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
+import com.github.zomboiddecompiler.rosetta.RosettaJavadocProvider;
+import com.github.zomboiddecompiler.rosetta.RosettaNamespace;
+import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.decompiler.DirectoryResultSaver;
@@ -27,6 +30,7 @@ public class ZomboidDecompiler {
 
     private boolean copyDependencies = false;
     private boolean jarGame = false;
+    private boolean addDocstrings = true;
 
     public void setCopyDependencies(boolean copyDependencies) {
         this.copyDependencies = copyDependencies;
@@ -34,6 +38,10 @@ public class ZomboidDecompiler {
 
     public void setJarGame(boolean jarGame) {
         this.jarGame = jarGame;
+    }
+
+    public void setAddDocstrings(boolean addDocstrings) {
+        this.addDocstrings = addDocstrings;
     }
 
     /**
@@ -184,6 +192,10 @@ public class ZomboidDecompiler {
                         : null)
                 .option("rosetta-directory", rosettaPath)
                 .option("indent-string", "    ");
+
+        if (addDocstrings) {
+            builder.option(IFabricJavadocProvider.PROPERTY_NAME, new RosettaJavadocProvider());
+        }
 
         if (vineflowerArgs != null) {
             for (VineflowerArgument argument: vineflowerArgs) {

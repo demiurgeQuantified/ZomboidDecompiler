@@ -7,6 +7,7 @@ import java.util.List;
 
 public class RosettaConstructor implements RosettaExecutable {
     private final List<RosettaParameter> parameters = new ArrayList<>();
+    private String notes = "";
 
     RosettaClass clazz = null;
 
@@ -25,21 +26,26 @@ public class RosettaConstructor implements RosettaExecutable {
         return "unknown constructor";
     }
 
+    @Override
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    @Override
+    public String getNotes() {
+        return notes;
+    }
+
     public List<RosettaParameter> getParameters() {
         return parameters;
     }
 
+    @Override
+    public RosettaReturn getReturn() {
+        return RosettaReturn.VOID;
+    }
+
     public @Nullable RosettaClass getClazz() {
         return clazz;
-    }
-
-    @Override
-    public String getReturnType() {
-        return "void";
-    }
-
-    @Override
-    public String getReturnName() {
-        return "";
     }
 }

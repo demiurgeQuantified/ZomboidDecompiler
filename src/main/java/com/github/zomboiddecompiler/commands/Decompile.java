@@ -21,6 +21,8 @@ public class Decompile implements Callable<Integer> {
     @Option(names = {"--rosetta-path"}, description = "Root path of a rosetta installation to use for variable names. " +
             "The prefix $ indicates a resource path.")
     private String rosettaPath = "$rosetta";
+    @Option(names = {"--add-docstrings"}, description = "If true, adds docstrings to the output based on the Rosetta data.")
+    private boolean addDocstrings = true;
 
     @Option(names = {"--log-path"}, description = "Path to a folder to write log files in.")
     private File logPath = new File("logs");
@@ -179,6 +181,7 @@ public class Decompile implements Callable<Integer> {
         ZomboidDecompiler decompiler = new ZomboidDecompiler();
         decompiler.setCopyDependencies(copyDependencies);
         decompiler.setJarGame(jarGame);
+        decompiler.setAddDocstrings(addDocstrings);
         decompiler.decompile(inputPath, outputPath, rosettaPath, argsList);
 
         return 0;

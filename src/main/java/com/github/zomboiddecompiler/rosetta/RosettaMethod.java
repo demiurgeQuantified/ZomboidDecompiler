@@ -7,9 +7,9 @@ import java.util.List;
 
 public class RosettaMethod implements RosettaExecutable {
     private final String name;
-    private String returnType = "void";
-    private String returnName = "";
+    private String notes = "";
 
+    private final RosettaReturn returns;
     private final List<RosettaParameter> parameters = new ArrayList<>();
     private boolean isStatic = false;
 
@@ -36,31 +36,32 @@ public class RosettaMethod implements RosettaExecutable {
         for (RosettaParameter parameter: parameters) {
             signature.append(parameter.getType()).append(" ").append(parameter.getName()).append(", ");
         }
-        signature.append(") -> ").append(returnType);
+        signature.append(") -> ").append(returns.getType());
         return signature.toString();
     }
-
-    public void setReturnType(String returnType) {
-        this.returnType = returnType;
-    }
-
-    public String getReturnType() {
-        return returnType;
-    }
-
-    public void setReturnName(String returnName) {
-        this.returnName = returnName;
-    }
-
-    public String getReturnName() { return returnName; }
 
     public void addParameter(RosettaParameter parameter) {
         parameters.add(parameter);
     }
 
     @Override
+    public void setNotes(String notes) {
+        this.notes = notes;
+    }
+
+    @Override
+    public String getNotes() {
+        return notes;
+    }
+
+    @Override
     public List<RosettaParameter> getParameters() {
         return parameters;
+    }
+
+    @Override
+    public RosettaReturn getReturn() {
+        return returns;
     }
 
     public String getName() {
@@ -79,7 +80,12 @@ public class RosettaMethod implements RosettaExecutable {
         return clazz;
     }
 
-    public RosettaMethod(String name) {
+    public RosettaMethod(String name, RosettaReturn returns) {
         this.name = name;
+        this.returns = returns;
+    }
+
+    public RosettaMethod(String name) {
+        this(name, RosettaReturn.VOID);
     }
 }

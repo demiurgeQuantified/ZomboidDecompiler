@@ -1,5 +1,6 @@
 package com.github.zomboiddecompiler.rosetta;
 
+import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.api.plugin.Plugin;
 import org.jetbrains.java.decompiler.api.plugin.PluginOptions;
@@ -44,6 +45,13 @@ public class RosettaPlugin implements Plugin {
 
         RosettaParser parser = new RosettaParser();
         parser.parseDirectory(rosettaPath);
+
+        // HACK to send the rosetta data to the javadoc provider
+        // this seems kind of dumb but i couldn't find a better way to do it
+        IFabricJavadocProvider javadocProvider = (IFabricJavadocProvider)DecompilerContext.getProperty(IFabricJavadocProvider.PROPERTY_NAME);
+        if (javadocProvider instanceof RosettaJavadocProvider rosettaProvider) {
+            rosettaProvider.addClassesFromNamespace(parser.namespaces);
+        }
 
         cleanup();
 

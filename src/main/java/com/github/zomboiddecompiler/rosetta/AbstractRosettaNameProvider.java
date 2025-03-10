@@ -49,7 +49,7 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
         // the string is used so that type names that end up the same will share an id space
         Map<String, List<VarVersionPair>> variableTypeMap = new LinkedHashMap<>();
         for (var entry : variables.entrySet()) {
-            String typeName = RosettaNamingFactory.getTypeName(entry.getValue());
+            String typeName = VineflowerUtils.getTypeName(entry.getValue());
             typeName = typeName.substring(typeName.lastIndexOf('.') + 1);
             variableTypeMap.putIfAbsent(typeName, new ArrayList<>());
             variableTypeMap.get(typeName).add(entry.getKey());

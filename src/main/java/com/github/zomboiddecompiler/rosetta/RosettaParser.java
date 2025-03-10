@@ -4,12 +4,35 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class RosettaParser {
     public final List<RosettaNamespace> namespaces = new ArrayList<>();
+
+    public void parseDirectory(Path directory) {
+        Path jsonDirectory = directory.resolve("json");
+        if (Files.exists(jsonDirectory)) {
+            directory = jsonDirectory;
+        }
+
+        try (Stream<Path> files = Files.walk(directory)) {
+            for (Path file : files.toList()) {
+                if (!file.getFileName().toString().toLowerCase().endsWith(".json")) continue;
+                try {
+                    parseJson(Files.newInputStream(file));
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public void parseJson(InputStream stream) {
         StringBuilder source = new StringBuilder();
@@ -67,8 +90,11 @@ public class RosettaParser {
                     continue;
                 }
                 JSONObject field = fields.getJSONObject(key);
+
                 RosettaField rosettaField = new RosettaField(field.getString("name"),
                                                              parseType(field.getJSONObject("type")));
+                rosettaField.setNotes(field.optString("notes"));
+
                 rosettaClass.addField(rosettaField);
             }
         }
@@ -81,24 +107,48 @@ public class RosettaParser {
             }
         }
 
+        rosettaClass.setNotes(clazz.optString("notes"));
+
         return rosettaClass;
     }
 
-    private RosettaMethod parseMethod(JSONObject method) {
-        RosettaMethod rosettaMethod = new RosettaMethod(method.getString("name"));
+    private RosettaReturn parseReturn(JSONObject returns) {
+        String type = parseType(returns.getJSONObject("type"));
+        if (type.equalsIgnoreCase("void")) {
+            return RosettaReturn.VOID;
+        }
+        
+        RosettaReturn rosettaReturn = new RosettaReturn(
+                returns.optString("name"),
+                parseType(returns.getJSONObject("type"))
+        );
 
-        JSONObject returns = method.getJSONObject("returns");
-        rosettaMethod.setReturnType(returns.getJSONObject("type").getString("basic"));
+        rosettaReturn.setNotes(returns.optString("notes"));
+
+        return rosettaReturn;
+    }
+
+    private void parseParameters(RosettaExecutable executable, JSONArray parameters) {
+        for (int i = 0; i < parameters.length(); i++) {
+            JSONObject parameter = parameters.getJSONObject(i);
+            RosettaParameter rosettaParameter = new RosettaParameter(
+                    parameter.getString("name"),
+                    parseType(parameter.getJSONObject("type"))
+            );
+
+            rosettaParameter.setNotes(parameter.optString("notes"));
+
+            executable.addParameter(rosettaParameter);
+        }
+    }
+
+    private RosettaMethod parseMethod(JSONObject method) {
+        RosettaMethod rosettaMethod = new RosettaMethod(
+                method.getString("name"), parseReturn(method.getJSONObject("returns")));
 
         JSONArray parameters = method.optJSONArray("parameters");
         if (parameters != null) {
-            for (int i = 0; i < parameters.length(); i++) {
-                JSONObject parameter = parameters.getJSONObject(i);
-                rosettaMethod.addParameter(new RosettaParameter(
-                        parameter.getString("name"),
-                        parseType(parameter.getJSONObject("type"))
-                ));
-            }
+            parseParameters(rosettaMethod, parameters);
         }
 
         JSONArray modifiers = method.optJSONArray("modifiers");
@@ -119,13 +169,7 @@ public class RosettaParser {
 
         JSONArray parameters = constructor.optJSONArray("parameters");
         if (parameters != null) {
-            for (int i = 0; i < parameters.length(); i++) {
-                JSONObject parameter = parameters.getJSONObject(i);
-                rosettaConstructor.addParameter(new RosettaParameter(
-                        parameter.getString("name"),
-                        parseType(parameter.getJSONObject("type"))
-                ));
-            }
+            parseParameters(rosettaConstructor, parameters);
         }
 
         return rosettaConstructor;

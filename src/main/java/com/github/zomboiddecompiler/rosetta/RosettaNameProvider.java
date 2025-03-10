@@ -2,10 +2,8 @@ package com.github.zomboiddecompiler.rosetta;
 
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
 import org.jetbrains.java.decompiler.struct.StructClass;
-import org.jetbrains.java.decompiler.struct.StructField;
 import org.jetbrains.java.decompiler.struct.gen.VarType;
 import org.jetbrains.java.decompiler.util.Pair;
-import org.jetbrains.java.decompiler.util.collections.VBStyleCollection;
 
 import java.util.*;
 
@@ -40,23 +38,6 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
         return index;
     }
 
-    /**
-     * Renames a parameter name if necessary to avoid shadowing a field.
-     * @param name Name of the parameter.
-     * @return If the name shadowed a field, a name that doesn't shadow a field. Otherwise the original name is returned.
-     */
-    private String renameParameterIfNeeded(String name) {
-        VBStyleCollection<StructField, String> fields = vineflowerClass.getFields();
-        for (StructField field : fields) {
-            if (Objects.equals(field.getName(), name)) {
-                name = "_" + name;
-                break;
-            }
-        }
-
-        return name;
-    }
-
     @Override
     public Map<VarVersionPair, String> rename(Map<VarVersionPair, Pair<VarType, String>> variables) {
         Map<VarVersionPair, String> result = new LinkedHashMap<>();
@@ -72,7 +53,7 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
                 result.put(pair, "this");
             } else if (index < executable.getParameters().size()) {
                 String name = executable.getParameters().get(index).getName();
-                name = renameParameterIfNeeded(name);
+                name = VineflowerUtils.renameParameterIfNeeded(vineflowerClass, name);
                 result.put(pair, name);
                 takenNames.add(name);
             } else {
@@ -90,7 +71,7 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
     public String renameAbstractParameter(String name, int index) {
         index = getTrueVariableIndex(index);
         name = executable.getParameters().get(index).getName();
-        return renameParameterIfNeeded(name);
+        return VineflowerUtils.renameParameterIfNeeded(vineflowerClass, name);
     }
 
     @Override

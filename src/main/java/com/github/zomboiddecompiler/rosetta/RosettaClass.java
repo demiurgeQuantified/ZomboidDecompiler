@@ -12,6 +12,7 @@ public class RosettaClass {
     private final List<RosettaMethod> methods = new ArrayList<>();
     private final Map<String, RosettaField> fields = new HashMap<>();
     private final List<RosettaConstructor> constructors = new ArrayList<>();
+    private String notes = "";
 
     RosettaNamespace namespace = null;
 
@@ -28,6 +29,10 @@ public class RosettaClass {
     public void addConstructor(RosettaConstructor constructor) {
         constructors.add(constructor);
         constructor.clazz = this;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     /**
@@ -63,5 +68,9 @@ public class RosettaClass {
 
     RosettaClass(String name) {
         this.name = name;
+    }
+
+    public String getNotes() {
+        return notes;
     }
 }
