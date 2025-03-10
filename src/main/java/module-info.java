@@ -1,4 +1,4 @@
-module ZomboidDecompiler {
+module com.github.zomboiddecompiler {
     requires org.jetbrains.annotations;
     requires org.json;
     requires vineflower;

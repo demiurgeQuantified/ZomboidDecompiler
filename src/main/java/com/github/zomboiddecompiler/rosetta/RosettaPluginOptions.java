@@ -1,5 +1,6 @@
 package com.github.zomboiddecompiler.rosetta;
 
+import org.jetbrains.java.decompiler.api.DecompilerOption;
 import org.jetbrains.java.decompiler.api.plugin.PluginOptions;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerPreferences.*;
 
@@ -7,7 +8,7 @@ public interface RosettaPluginOptions {
     @Name("Rosetta Directory")
     @Description("Use rosetta data stored at the given path to give names to method parameters." +
             "The prefix '$' indicates a resource path.")
-    @Type(Type.STRING)
+    @Type(DecompilerOption.Type.STRING)
     String ROSETTA_DIRECTORY = "rosetta-directory";
 
     static void addDefaults(PluginOptions.AddDefaults cons) {

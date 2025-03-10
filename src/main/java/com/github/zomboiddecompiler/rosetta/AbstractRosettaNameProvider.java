@@ -1,8 +1,10 @@
 package com.github.zomboiddecompiler.rosetta;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
+import org.jetbrains.java.decompiler.struct.StructClass;
 import org.jetbrains.java.decompiler.struct.gen.VarType;
 
 import javax.lang.model.SourceVersion;
@@ -21,6 +23,10 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
      * @return A valid name for a Java variable.
      */
     private String getValidName(String name, @Nullable Set<String> invalidNames) {
+        @Nullable StructClass clazz = DecompilerContext.getStructContext().getClass(name);
+        if (clazz != null) {
+            // if it is an interface, and its name starts with I, and the character after that is capital, and the character after that is not, trim the I
+        }
         // TODO: if the user specifies a source version, use that version here
         if (!SourceVersion.isName(name) || (invalidNames != null && invalidNames.contains(name))) {
             name = "_" + name;

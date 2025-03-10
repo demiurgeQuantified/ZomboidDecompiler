@@ -267,7 +267,7 @@ public class ZomboidDecompiler {
     }
 
     public static void initLoggers(File logDirectory) {
-        if (!logDirectory.mkdirs()) {
+        if (!logDirectory.exists() && !logDirectory.mkdirs()) {
             System.out.println("Failed to create logs directory (probably a permissions issue). Logging to console instead.");
             log = new StreamLogger(System.out);
             vineflowerLog = new StreamLogger(System.out);

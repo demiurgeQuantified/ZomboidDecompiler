@@ -1,0 +1,27 @@
+plugins {
+    id "application"
+    id "org.gradlex.extra-java-module-info" version "1.11"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.vineflower:vineflower:1.11.1"
+    implementation "org.json:json:20250107"
+    implementation "info.picocli:picocli:4.7.6"
+    implementation "org.jetbrains:annotations:26.0.2"
+}
+
+extraJavaModuleInfo {
+    module("org.vineflower:vineflower", "vineflower") {
+        exportAllPackages()
+        uses("org.jetbrains.java.decompiler.api.plugin.Plugin")
+    }
+}
+
+application {
+    mainModule = "com.github.zomboiddecompiler"
+    mainClass = "com.github.zomboiddecompiler.commands.Decompile"
+}

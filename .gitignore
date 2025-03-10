@@ -28,7 +28,8 @@ bin/
 ### Mac OS ###
 .DS_Store
 
-/lib/
 /logs/
-/resources/
 /output/
+/build/
+/.gradle/
+/src/main/resources/rosetta/

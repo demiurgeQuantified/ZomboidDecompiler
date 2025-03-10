@@ -9,11 +9,12 @@ import org.jetbrains.java.decompiler.util.Pair;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 public class RosettaPlugin implements Plugin {
@@ -37,14 +38,21 @@ public class RosettaPlugin implements Plugin {
         Path rosettaPath;
 
         if (rosettaDir.startsWith("$")) {
-            URL rosettaURL = RosettaPlugin.class.getClassLoader().getResource(rosettaDir.substring(1));
+            URL rosettaURL = getClass().getResource(rosettaDir.substring(1));
             if (rosettaURL == null) {
                 return null;
             }
 
             try {
-                rosettaPath = Paths.get(rosettaURL.toURI());
-            } catch (URISyntaxException e) {
+                URI uri = rosettaURL.toURI();
+
+                // this seems stupid and wasn't necessary before, but as soon as i moved to gradle, it is?
+                Map<String, String> env = new HashMap<>();
+                env.put("create", "true");
+                try(FileSystem ignored = FileSystems.newFileSystem(uri, env)) {
+                    rosettaPath = Paths.get(uri);
+                }
+            } catch (URISyntaxException | IOException e) {
                 e.printStackTrace();
                 return null;
             }
