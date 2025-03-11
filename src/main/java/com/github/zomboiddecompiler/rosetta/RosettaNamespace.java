@@ -7,7 +7,7 @@ public class RosettaNamespace {
     private final String name;
     private final List<RosettaClass> classes = new ArrayList<>();
 
-    String getName() {
+    public String getName() {
         return name;
     }
 

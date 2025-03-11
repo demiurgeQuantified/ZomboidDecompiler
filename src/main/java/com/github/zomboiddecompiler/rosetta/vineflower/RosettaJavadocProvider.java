@@ -1,5 +1,6 @@
-package com.github.zomboiddecompiler.rosetta;
+package com.github.zomboiddecompiler.rosetta.vineflower;
 
+import com.github.zomboiddecompiler.rosetta.*;
 import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.struct.StructClass;

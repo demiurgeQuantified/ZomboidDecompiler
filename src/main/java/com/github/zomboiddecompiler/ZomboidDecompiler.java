@@ -10,8 +10,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Stream;
 
-import com.github.zomboiddecompiler.rosetta.RosettaJavadocProvider;
-import com.github.zomboiddecompiler.rosetta.RosettaNamespace;
+import com.github.zomboiddecompiler.rosetta.vineflower.RosettaJavadocProvider;
 import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.api.Decompiler;

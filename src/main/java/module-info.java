@@ -1,3 +1,5 @@
+import com.github.zomboiddecompiler.rosetta.vineflower.RosettaPlugin;
+
 module com.github.zomboiddecompiler {
     requires org.jetbrains.annotations;
     requires org.json;
@@ -6,7 +8,7 @@ module com.github.zomboiddecompiler {
     requires java.compiler;
 
     provides org.jetbrains.java.decompiler.api.plugin.Plugin with
-            com.github.zomboiddecompiler.rosetta.RosettaPlugin;
+            RosettaPlugin;
 
     opens com.github.zomboiddecompiler.commands to
             info.picocli;

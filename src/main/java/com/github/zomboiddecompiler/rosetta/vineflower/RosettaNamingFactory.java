@@ -1,5 +1,8 @@
-package com.github.zomboiddecompiler.rosetta;
+package com.github.zomboiddecompiler.rosetta.vineflower;
 
+import com.github.zomboiddecompiler.rosetta.RosettaClass;
+import com.github.zomboiddecompiler.rosetta.RosettaExecutable;
+import com.github.zomboiddecompiler.rosetta.RosettaNamespace;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;

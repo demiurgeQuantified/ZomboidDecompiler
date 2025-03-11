@@ -1,4 +1,4 @@
-package com.github.zomboiddecompiler.rosetta;
+package com.github.zomboiddecompiler.rosetta.vineflower;
 
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.main.DecompilerContext;

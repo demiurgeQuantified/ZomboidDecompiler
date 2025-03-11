@@ -1,5 +1,7 @@
-package com.github.zomboiddecompiler.rosetta;
+package com.github.zomboiddecompiler.rosetta.vineflower;
 
+import com.github.zomboiddecompiler.rosetta.RosettaExecutable;
+import com.github.zomboiddecompiler.rosetta.RosettaMethod;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
 import org.jetbrains.java.decompiler.struct.StructClass;
 import org.jetbrains.java.decompiler.struct.gen.VarType;
