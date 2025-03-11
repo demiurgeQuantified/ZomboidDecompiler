@@ -95,10 +95,9 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
             notes = returns.getNotes();
             if (!notes.isBlank()) {
                 anyNotes = true;
+                javadoc.append("@return ")
+                        .append(notes);
             }
-
-            javadoc.append("@return ")
-                    .append(notes);
         }
 
         if (!anyNotes) {
