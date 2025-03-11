@@ -69,22 +69,7 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
 
         StringBuilder javadoc = new StringBuilder(notes);
 
-        for (RosettaParameter parameter : executable.getParameters()) {
-            if (!javadoc.isEmpty()) {
-                javadoc.append("\n");
-            }
-
-            javadoc.append("@param ")
-                    // rename for consistency with the code
-                    .append(VineflowerUtils.renameParameterIfNeeded(clazz, parameter.getName()));
-
-            notes = parameter.getNotes();
-            if (!notes.isBlank()) {
-                anyNotes = true;
-                javadoc.append(" ")
-                        .append(parameter.getNotes());
-            }
-        }
+        javadoc.append(getParameterDoc(clazz, executable));
 
         if (executable.getReturn() != RosettaReturn.VOID) {
             RosettaReturn returns = executable.getReturn();
@@ -109,5 +94,32 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
 
     public void addClassesFromNamespace(List<RosettaNamespace> classes) {
         this.classes = VineflowerUtils.buildClassMap(classes);
+    }
+
+    private String getParameterDoc(StructClass clazz, RosettaExecutable executable) {
+        StringBuilder parameterBuilder = new StringBuilder();
+
+        boolean anyNotes = false;
+        for (RosettaParameter parameter : executable.getParameters()) {
+            parameterBuilder.append("\n");
+
+            parameterBuilder.append("@param ")
+                    // rename for consistency with the code
+                    .append(VineflowerUtils.renameParameterIfNeeded(clazz, parameter.getName()));
+
+            String notes = parameter.getNotes();
+            if (!notes.isBlank()) {
+                anyNotes = true;
+                parameterBuilder.append(" ")
+                        .append(parameter.getNotes());
+            }
+        }
+
+        if (!anyNotes) {
+            // if no parameter had a note, remove parameter annotations
+            return "";
+        }
+
+        return parameterBuilder.toString();
     }
 }
