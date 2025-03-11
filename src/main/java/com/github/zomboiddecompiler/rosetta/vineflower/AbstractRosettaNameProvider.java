@@ -16,6 +16,17 @@ import java.util.Set;
 
 /// Base class for Rosetta name providers.
 public abstract class AbstractRosettaNameProvider implements IVariableNameProvider {
+    private static Set<String> primitiveTypeNames = Set.of(
+            "byte",
+            "short",
+            "int",
+            "long",
+            "float",
+            "double",
+            "boolean",
+            "char"
+    );
+
     /**
      * Ensures the passed name is a valid name for Java code, returning it if it is or a new valid name if it isn't.
      * @param name The name to check for validity.
@@ -61,6 +72,9 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
             typeName = typeName.substring(0, 1).toLowerCase() + typeName.substring(1);
 
             if (vars.size() == 1) {
+                if (primitiveTypeNames.contains(typeName)) {
+                    typeName = typeName + 0;
+                }
                 result.put(vars.get(0), getValidName(typeName, invalidNames));
                 continue;
             }
