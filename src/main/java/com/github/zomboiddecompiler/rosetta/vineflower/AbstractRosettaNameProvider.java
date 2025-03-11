@@ -1,6 +1,7 @@
 package com.github.zomboiddecompiler.rosetta.vineflower;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
@@ -16,7 +17,7 @@ import java.util.Set;
 
 /// Base class for Rosetta name providers.
 public abstract class AbstractRosettaNameProvider implements IVariableNameProvider {
-    private static Set<String> primitiveTypeNames = Set.of(
+    private final static Set<String> primitiveTypeNames = Set.of(
             "byte",
             "short",
             "int",
@@ -34,15 +35,38 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
      * @return A valid name for a Java variable.
      */
     private String getValidName(String name, @Nullable Set<String> invalidNames) {
-        @Nullable StructClass clazz = DecompilerContext.getStructContext().getClass(name);
-        if (clazz != null) {
-            // if it is an interface, and its name starts with I, and the character after that is capital, and the character after that is not, trim the I
-        }
         // TODO: if the user specifies a source version, use that version here
         if (!SourceVersion.isName(name) || (invalidNames != null && invalidNames.contains(name))) {
             name = "_" + name;
             assert SourceVersion.isName(name) && (invalidNames == null || !invalidNames.contains(name));
         }
+        return name;
+    }
+
+    /**
+     * Returns a 'pretty' name for a type for use in naming variables.
+     * @param type The type of the variable.
+     * @return Pretty name for the variable.
+     */
+    private String getDefaultVariableName(String type) {
+        @Nullable StructClass clazz = DecompilerContext.getStructContext().getClass(type);
+        // if the class is an interface,
+        // and its name starts with I followed by a capital and then non-capital letter, remove the I
+        // e.g. IVariableNameProvider -> VariableNameProvider
+        // we don't count repeat capitals as I might be part of an acronym
+        String name = type.substring(type.lastIndexOf("/") + 1).replace("$", ".");
+        if (clazz != null
+                && clazz.hasModifier(CodeConstants.ACC_INTERFACE)
+                && name.length() > 3
+                && name.startsWith("I")
+                && Character.isUpperCase(name.codePointAt(1))
+                && Character.isLowerCase(name.codePointAt(2))) {
+            name = name.substring(1);
+        }
+
+        name = name.substring(name.lastIndexOf('.') + 1);
+        name = name.substring(0, 1).toLowerCase() + name.substring(1);
+
         return name;
     }
 
@@ -60,8 +84,8 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
         // the string is used so that type names that end up the same will share an id space
         Map<String, List<VarVersionPair>> variableTypeMap = new LinkedHashMap<>();
         for (var entry : variables.entrySet()) {
-            String typeName = VineflowerUtils.getTypeName(entry.getValue());
-            typeName = typeName.substring(typeName.lastIndexOf('.') + 1);
+            String typeName = getDefaultVariableName(
+                    VineflowerUtils.getRawTypeName(entry.getValue()));
             variableTypeMap.putIfAbsent(typeName, new ArrayList<>());
             variableTypeMap.get(typeName).add(entry.getKey());
         }
@@ -69,7 +93,6 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
         for (var entry : variableTypeMap.entrySet()) {
             List<VarVersionPair> vars = entry.getValue();
             String typeName = entry.getKey();
-            typeName = typeName.substring(0, 1).toLowerCase() + typeName.substring(1);
 
             if (vars.size() == 1) {
                 if (primitiveTypeNames.contains(typeName)) {

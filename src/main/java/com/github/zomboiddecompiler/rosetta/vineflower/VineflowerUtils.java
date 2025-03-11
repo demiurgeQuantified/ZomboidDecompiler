@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class VineflowerUtils {
-    public static String getTypeName(VarType varType) {
+    public static String getRawTypeName(VarType varType) {
         assert varType.value != null;
         return switch (varType.type) {
             case VOID -> "void";
@@ -28,9 +28,13 @@ public class VineflowerUtils {
             case DOUBLE -> "double";
             case LONG -> "long";
             case SHORT -> "short";
-            default -> varType.value.substring(
-                    varType.value.lastIndexOf("/") + 1).replace("$", ".");
+            default -> varType.value;
         };
+    }
+
+    public static String getTypeName(VarType varType) {
+        String typeName = getRawTypeName(varType);
+        return typeName.substring(typeName.lastIndexOf("/") + 1).replace("$", ".");
     }
 
     public static boolean signaturesMatch(RosettaExecutable executable, MethodDescriptor descriptor) {
