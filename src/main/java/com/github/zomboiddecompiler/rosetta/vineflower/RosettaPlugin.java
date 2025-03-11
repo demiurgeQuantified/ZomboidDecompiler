@@ -88,6 +88,7 @@ public class RosettaPlugin implements Plugin {
                 URI uri = rosettaURL.toURI();
 
                 // this seems stupid and wasn't necessary before, but as soon as i moved to gradle, it is?
+                // and it doesn't work when you aren't running with gradle!!
                 Map<String, String> env = new HashMap<>();
                 env.put("create", "true");
                 fileSystem = FileSystems.newFileSystem(uri, env);
