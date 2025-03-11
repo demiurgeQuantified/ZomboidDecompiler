@@ -161,6 +161,8 @@ public class RosettaParser {
             }
         }
 
+        rosettaMethod.setNotes(method.optString("notes"));
+
         return rosettaMethod;
     }
 
@@ -171,6 +173,7 @@ public class RosettaParser {
         if (parameters != null) {
             parseParameters(rosettaConstructor, parameters);
         }
+        rosettaConstructor.setNotes(constructor.optString("notes"));
 
         return rosettaConstructor;
     }
