@@ -64,7 +64,7 @@ public class ZomboidDecompiler {
 
     private boolean copyDependencies(List<Path> dependencies, Path outDirectory) {
         if (Files.exists(outDirectory)) {
-            clearDirectory(outDirectory);
+            FileUtils.clearDirectory(outDirectory);
         } else {
             try {
                 Files.createDirectory(outDirectory);
@@ -80,9 +80,9 @@ public class ZomboidDecompiler {
             for (Path dependency : dependencies) {
                 String dependencyName = dependency.getFileName().toString();
                 if (Files.isDirectory(dependency)) {
-                    copyFileOrDirectory(dependency, zipFileSystem.getPath(dependencyName));
+                    FileUtils.copyFileOrDirectory(dependency, zipFileSystem.getPath(dependencyName));
                 } else {
-                    copyFileOrDirectory(dependency, outDirectory.resolve(dependencyName));
+                    FileUtils.copyFileOrDirectory(dependency, outDirectory.resolve(dependencyName));
                 }
             }
         } catch (IOException e) {
@@ -140,7 +140,7 @@ public class ZomboidDecompiler {
         }
 
         if (Files.exists(outputPath)) {
-            clearDirectory(outputPath);
+            FileUtils.clearDirectory(outputPath);
         } else {
             try {
                 Files.createDirectories(outputPath);
@@ -164,7 +164,7 @@ public class ZomboidDecompiler {
 
         if (jarGame) {
             log.log("Jarring game...");
-            if (zipDirectory(zombieDirectory, outputPath.resolve("zombie.jar"))) {
+            if (FileUtils.zipDirectory(zombieDirectory, outputPath.resolve("zombie.jar"))) {
                 log.log("Game jarred.");
             } else {
                 log.log("Game jarring failed. Aborting because this usually means something is wrong with the game installation.");
@@ -212,69 +212,6 @@ public class ZomboidDecompiler {
     private static final Map<String, String> ENV = Map.of(
             "create", "true"
     );
-
-    /**
-     * Zips the contents of a directory.
-     * @param in Path of the directory to zip.
-     * @param out Path to write the zip to. Extension should be included.
-     */
-    static boolean zipDirectory(Path in, Path out) {
-        try {
-            try (FileSystem zipFileSystem = FileSystems.newFileSystem(out, ENV)) {
-                copyFileOrDirectory(in, zipFileSystem.getPath(
-                        in.getFileName().toString()
-                ));
-            }
-        } catch (IOException e) {
-            log.log(e);
-            return false;
-        }
-        return true;
-    }
-
-    static void copyFileOrDirectory(Path source, Path destination) throws IOException {
-        assert Files.exists(source);
-
-        if (Files.isDirectory(source)) {
-            Files.createDirectory(destination);
-            try (Stream<Path> files = Files.list(source)) {
-                files.forEach(
-                        path -> {
-                            try {
-                                copyFileOrDirectory(path, destination.resolve(
-                                        path.getFileName().toString()));
-                            } catch (IOException e) {
-                                log.log(e);
-                            }
-                        });
-            }
-        } else {
-            Files.copy(source, destination);
-        }
-    }
-
-    /**
-     * Recursively deletes every file in a directory.
-     * @param directory The directory to clear.
-     */
-    private static void clearDirectory(Path directory) {
-        assert Files.isDirectory(directory);
-
-        try (Stream<Path> files = Files.list(directory)) {
-            files.forEach(path -> {
-                try {
-                    if (Files.isDirectory(path)) {
-                        clearDirectory(path);
-                    }
-                    Files.delete(path);
-                } catch (IOException e) {
-                    log.log(e);
-                }
-            });
-        } catch (IOException e) {
-            log.log(e);
-        }
-    }
 
     public static void initLoggers(File logDirectory) {
         if (!logDirectory.exists() && !logDirectory.mkdirs()) {
