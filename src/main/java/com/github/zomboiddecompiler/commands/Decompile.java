@@ -18,9 +18,6 @@ import java.util.concurrent.Callable;
         version = ZomboidDecompiler.VERSION_MAJOR + "." + ZomboidDecompiler.VERSION_MINOR + "." + ZomboidDecompiler.VERSION_PATCH,
         description = "Decompiles Project Zomboid with automatic dependency detection and specific variable renaming.")
 public class Decompile implements Callable<Integer> {
-    @Option(names = {"--rosetta-path"}, description = "Root path of a rosetta installation to use for variable names. " +
-            "The prefix $ indicates a resource path.")
-    private String rosettaPath = "$rosetta";
     @Option(names = {"--add-docstrings"}, description = "If true, adds docstrings to the output based on the Rosetta data.")
     private boolean addDocstrings = true;
 
@@ -182,7 +179,7 @@ public class Decompile implements Callable<Integer> {
         decompiler.setCopyDependencies(copyDependencies);
         decompiler.setJarGame(jarGame);
         decompiler.setAddDocstrings(addDocstrings);
-        decompiler.decompile(inputPath, outputPath, rosettaPath, argsList);
+        decompiler.decompile(inputPath, outputPath, argsList);
 
         return 0;
     }

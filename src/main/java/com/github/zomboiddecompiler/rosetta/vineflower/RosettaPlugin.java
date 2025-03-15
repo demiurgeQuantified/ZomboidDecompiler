@@ -1,5 +1,6 @@
 package com.github.zomboiddecompiler.rosetta.vineflower;
 
+import com.github.zomboiddecompiler.rosetta.RosettaNamespace;
 import com.github.zomboiddecompiler.rosetta.RosettaParser;
 import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.annotations.Nullable;
@@ -10,16 +11,16 @@ import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IVariableNamingFactory;
 import org.jetbrains.java.decompiler.util.Pair;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RosettaPlugin implements Plugin {
-    private FileSystem fileSystem = null;
+    /**
+      * Name of a compiler property that RosettaNamespaces to be used for documentation can be passed in through.
+      * The property should contain List<RosettaNamespace> or null.
+      */
+    public static String NAMESPACE_PROPERTY_NAME = "rosetta:namespaces";
 
     @Override
     public String id() {
@@ -31,45 +32,47 @@ public class RosettaPlugin implements Plugin {
         return "Renames method parameters using data from Rosetta files.";
     }
 
+    @SuppressWarnings("unchecked")
+    private List<RosettaNamespace> getPropertyNamespaces() {
+        Object namespaces = DecompilerContext.getProperty(NAMESPACE_PROPERTY_NAME);
+        if (namespaces == null) {
+            return new ArrayList<>();
+        }
+
+        if (!(namespaces instanceof List)) {
+            DecompilerContext.getLogger().writeMessage("Option " + NAMESPACE_PROPERTY_NAME + " must be an instance of List<RosettaNamespace>. Ignoring.", IFernflowerLogger.Severity.WARN);
+            return new ArrayList<>();
+        }
+
+        return (List<RosettaNamespace>)namespaces;
+    }
+
     @Override
     public @Nullable IVariableNamingFactory getRenamingFactory() {
+        List<RosettaNamespace> namespaces = new ArrayList<>();
+
         String rosettaDir = (String)DecompilerContext.getProperty(RosettaPluginOptions.ROSETTA_DIRECTORY);
-        if (rosettaDir == null) {
-            return null;
+        if (rosettaDir != null) {
+            Path rosettaPath = resolveRosettaPath(rosettaDir);
+            if (rosettaPath == null) {
+                DecompilerContext.getLogger().writeMessage("Rosetta path did not resolve to a valid directory. Ignoring.", IFernflowerLogger.Severity.WARN);
+            } else {
+                RosettaParser parser = new RosettaParser();
+                parser.parseDirectory(rosettaPath);
+                namespaces.addAll(parser.namespaces);
+            }
         }
 
-        Path rosettaPath = resolveRosettaPath(rosettaDir);
-        if (rosettaPath == null) {
-            DecompilerContext.getLogger().writeMessage("Rosetta path did not resolve to a valid directory. Ignoring.", IFernflowerLogger.Severity.WARN);
-            return null;
-        }
-
-        RosettaParser parser = new RosettaParser();
-        parser.parseDirectory(rosettaPath);
+        namespaces.addAll(getPropertyNamespaces());
 
         // HACK to send the rosetta data to the javadoc provider
         // this seems kind of dumb but i couldn't find a better way to do it
         IFabricJavadocProvider javadocProvider = (IFabricJavadocProvider)DecompilerContext.getProperty(IFabricJavadocProvider.PROPERTY_NAME);
         if (javadocProvider instanceof RosettaJavadocProvider rosettaProvider) {
-            rosettaProvider.addClassesFromNamespace(parser.namespaces);
+            rosettaProvider.addClassesFromNamespaces(namespaces);
         }
 
-        cleanup();
-
-        return new RosettaNamingFactory(parser.namespaces);
-    }
-
-    // hack to prevent the file system from being closed when the rosetta parser tries to read it
-    // TODO i hate this!!! resource cleanup should not be manual
-    // how can this be restructured for try-with-resources to make sense?
-    private void cleanup() {
-        if (fileSystem != null) {
-            try {
-                fileSystem.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        return new RosettaNamingFactory(namespaces);
     }
 
     @Override
@@ -78,36 +81,10 @@ public class RosettaPlugin implements Plugin {
     }
 
     private @Nullable Path resolveRosettaPath(String directory) {
-        if (directory.startsWith("$")) {
-            URL rosettaURL = getClass().getClassLoader().getResource(directory.substring(1));
-            if (rosettaURL == null) {
-                return null;
-            }
-
-            try {
-                URI uri = rosettaURL.toURI();
-
-                // this seems stupid and wasn't necessary before, but as soon as i moved to gradle, it is?
-                // and it doesn't work when you aren't running with gradle!!
-                Map<String, String> env = new HashMap<>();
-                env.put("create", "true");
-                fileSystem = FileSystems.newFileSystem(uri, env);
-
-                Path rosettaPath = Paths.get(uri);
-                if (!Files.exists(rosettaPath) || !Files.isDirectory(rosettaPath)) {
-                    return null;
-                }
-                return rosettaPath;
-            } catch (URISyntaxException | IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-        } else {
-            Path rosettaPath = Paths.get(directory);
-            if (!Files.exists(rosettaPath) || !Files.isDirectory(rosettaPath)) {
-                return null;
-            }
-            return rosettaPath;
+        Path rosettaPath = Paths.get(directory);
+        if (!Files.exists(rosettaPath) || !Files.isDirectory(rosettaPath)) {
+            return null;
         }
+        return rosettaPath;
     }
 }

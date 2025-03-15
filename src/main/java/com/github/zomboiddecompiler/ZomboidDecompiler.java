@@ -3,16 +3,18 @@ package com.github.zomboiddecompiler;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
 
+import com.github.zomboiddecompiler.rosetta.RosettaNamespace;
+import com.github.zomboiddecompiler.rosetta.RosettaParser;
 import com.github.zomboiddecompiler.rosetta.vineflower.RosettaJavadocProvider;
+import com.github.zomboiddecompiler.rosetta.vineflower.RosettaPlugin;
 import net.fabricmc.fernflower.api.IFabricJavadocProvider;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.decompiler.DirectoryResultSaver;
 import org.jetbrains.java.decompiler.main.decompiler.PrintStreamLogger;
@@ -119,8 +121,7 @@ public class ZomboidDecompiler {
      * @param gamePath Root directory of the game.
      * @param outputPath Path to write the output to.
      */
-    public void decompile(Path gamePath, Path outputPath, @Nullable String rosettaPath,
-                          @Nullable List<VineflowerArgument> vineflowerArgs) {
+    public void decompile(Path gamePath, Path outputPath, List<VineflowerArgument> vineflowerArgs) {
         assert Files.exists(gamePath) && Files.isDirectory(gamePath);
 
         if (Files.exists(gamePath.resolve("projectzomboid.sh"))) {
@@ -189,17 +190,15 @@ public class ZomboidDecompiler {
                 .logger(vineflowerLog instanceof StreamLogger fileLogger
                         ? new PrintStreamLogger(fileLogger.getStream())
                         : null)
-                .option("rosetta-directory", rosettaPath)
-                .option("indent-string", "    ");
+                .option("indent-string", "    ")
+                .option(RosettaPlugin.NAMESPACE_PROPERTY_NAME, getResourceNamespaces());
 
         if (addDocstrings) {
             builder.option(IFabricJavadocProvider.PROPERTY_NAME, new RosettaJavadocProvider());
         }
 
-        if (vineflowerArgs != null) {
-            for (VineflowerArgument argument: vineflowerArgs) {
-                builder.option(argument.parameter, argument.value);
-            }
+        for (VineflowerArgument argument: vineflowerArgs) {
+            builder.option(argument.parameter, argument.value);
         }
 
         log.log("Beginning decompilation...");
@@ -302,4 +301,30 @@ public class ZomboidDecompiler {
     }
 
     public record VineflowerArgument(String parameter, Object value) {}
+
+    private static List<RosettaNamespace> getResourceNamespaces() {
+        URL rosettaURL = ZomboidDecompiler.class.getClassLoader().getResource("rosetta");
+        if (rosettaURL != null) {
+            try {
+                URI uri = rosettaURL.toURI();
+
+                // this seems stupid and wasn't necessary before, but as soon as i moved to gradle, it is?
+                // and it doesn't work when you aren't running with gradle!!
+                try (FileSystem ignored = FileSystems.newFileSystem(uri, ENV)) {
+                    Path rosettaPath = Paths.get(uri);
+                    if (!Files.exists(rosettaPath) || !Files.isDirectory(rosettaPath)) {
+                        return new ArrayList<>();
+                    }
+
+                    RosettaParser parser = new RosettaParser();
+                    parser.parseDirectory(rosettaPath);
+
+                    return parser.namespaces;
+                }
+            } catch (URISyntaxException | IOException e) {
+                log.log(e);
+            }
+        }
+        return new ArrayList<>();
+    }
 }
