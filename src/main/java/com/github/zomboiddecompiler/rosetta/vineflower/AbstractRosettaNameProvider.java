@@ -3,6 +3,7 @@ package com.github.zomboiddecompiler.rosetta.vineflower;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
+import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
 import org.jetbrains.java.decompiler.struct.StructClass;
@@ -49,25 +50,18 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
      * @return Pretty name for the variable.
      */
     private String getDefaultVariableName(String type) {
-        @Nullable StructClass clazz = DecompilerContext.getStructContext().getClass(type);
-        // if the class is an interface,
-        // and its name starts with I followed by a capital and then non-capital letter, remove the I
-        // e.g. IVariableNameProvider -> VariableNameProvider
-        // we don't count repeat capitals as I might be part of an acronym
-        String name = type.substring(type.lastIndexOf("/") + 1).replace("$", ".");
-        if (clazz != null
-                && clazz.hasModifier(CodeConstants.ACC_INTERFACE)
-                && name.length() > 3
-                && name.startsWith("I")
-                && Character.isUpperCase(name.codePointAt(1))
-                && Character.isLowerCase(name.codePointAt(2))) {
-            name = name.substring(1);
+        Object nameProvider = DecompilerContext.getProperty(RosettaPlugin.TYPE_NAMER_PROPERTY_NAME);
+        if (nameProvider != null) {
+            if (nameProvider instanceof ITypeNameProvider) {
+                return ((ITypeNameProvider)nameProvider).renameType(type);
+            } else if (!invalidTypeNameProviderWarned) {
+                DecompilerContext.getLogger().writeMessage(
+                        "Type name provider must be an instance of ITypeNameProvider. Ignoring.",
+                        IFernflowerLogger.Severity.WARN);
+                invalidTypeNameProviderWarned = true;
+            }
         }
-
-        name = name.substring(name.lastIndexOf('.') + 1);
-        name = name.substring(0, 1).toLowerCase() + name.substring(1);
-
-        return name;
+        return DEFAULT_NAME_PROVIDER.renameType(type);
     }
 
     /**
@@ -110,6 +104,10 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
 
         return result;
     }
+
+    private static boolean invalidTypeNameProviderWarned = false;
+
+    private final static ITypeNameProvider DEFAULT_NAME_PROVIDER = new DefaultTypeNameProvider();
 
     @Override
     public void addParentContext(IVariableNameProvider renamer) {

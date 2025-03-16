@@ -191,7 +191,8 @@ public class ZomboidDecompiler {
                         ? new PrintStreamLogger(fileLogger.getStream())
                         : null)
                 .option("indent-string", "    ")
-                .option(RosettaPlugin.NAMESPACE_PROPERTY_NAME, getResourceNamespaces());
+                .option(RosettaPlugin.NAMESPACE_PROPERTY_NAME, getResourceNamespaces())
+                .option(RosettaPlugin.TYPE_NAMER_PROPERTY_NAME, new ZomboidTypeNameProvider());
 
         if (addDocstrings) {
             builder.option(IFabricJavadocProvider.PROPERTY_NAME, new RosettaJavadocProvider());

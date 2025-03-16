@@ -21,6 +21,10 @@ public class RosettaPlugin implements Plugin {
       * The property should contain List<RosettaNamespace> or null.
       */
     public static String NAMESPACE_PROPERTY_NAME = "rosetta:namespaces";
+    /**
+     * Name of a compiler property that a class that provides pretty names for types can be passed in through.
+     */
+    public static String TYPE_NAMER_PROPERTY_NAME = "rosetta:typenamer";
 
     @Override
     public String id() {
