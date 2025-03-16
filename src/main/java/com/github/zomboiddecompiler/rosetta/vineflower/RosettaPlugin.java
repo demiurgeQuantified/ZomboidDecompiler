@@ -36,23 +36,30 @@ public class RosettaPlugin implements Plugin {
         return "Renames method parameters using data from Rosetta files.";
     }
 
-    @SuppressWarnings("unchecked")
-    private List<RosettaNamespace> getPropertyNamespaces() {
-        Object namespaces = DecompilerContext.getProperty(NAMESPACE_PROPERTY_NAME);
-        if (namespaces == null) {
-            return new ArrayList<>();
-        }
-
-        if (!(namespaces instanceof List)) {
-            DecompilerContext.getLogger().writeMessage("Option " + NAMESPACE_PROPERTY_NAME + " must be an instance of List<RosettaNamespace>. Ignoring.", IFernflowerLogger.Severity.WARN);
-            return new ArrayList<>();
-        }
-
-        return (List<RosettaNamespace>)namespaces;
+    @Override
+    public @Nullable IVariableNamingFactory getRenamingFactory() {
+        return namingFactory;
     }
 
     @Override
-    public @Nullable IVariableNamingFactory getRenamingFactory() {
+    public @Nullable PluginOptions getPluginOptions() {
+        return () -> Pair.of(RosettaPluginOptions.class, RosettaPluginOptions::addDefaults);
+    }
+
+    public RosettaPlugin() {
+        List<RosettaNamespace> namespaces = loadNamespaces();
+
+        IFabricJavadocProvider javadocProvider = (IFabricJavadocProvider)DecompilerContext.getProperty(IFabricJavadocProvider.PROPERTY_NAME);
+        if (javadocProvider instanceof RosettaJavadocProvider rosettaProvider) {
+            rosettaProvider.addClassesFromNamespaces(namespaces);
+        }
+
+        namingFactory.addClassesFromNamespaces(namespaces);
+    }
+
+    private final RosettaNamingFactory namingFactory = new RosettaNamingFactory();
+
+    private List<RosettaNamespace> loadNamespaces() {
         List<RosettaNamespace> namespaces = new ArrayList<>();
 
         String rosettaDir = (String)DecompilerContext.getProperty(RosettaPluginOptions.ROSETTA_DIRECTORY);
@@ -69,19 +76,22 @@ public class RosettaPlugin implements Plugin {
 
         namespaces.addAll(getPropertyNamespaces());
 
-        // HACK to send the rosetta data to the javadoc provider
-        // this seems kind of dumb but i couldn't find a better way to do it
-        IFabricJavadocProvider javadocProvider = (IFabricJavadocProvider)DecompilerContext.getProperty(IFabricJavadocProvider.PROPERTY_NAME);
-        if (javadocProvider instanceof RosettaJavadocProvider rosettaProvider) {
-            rosettaProvider.addClassesFromNamespaces(namespaces);
-        }
-
-        return new RosettaNamingFactory(namespaces);
+        return namespaces;
     }
 
-    @Override
-    public @Nullable PluginOptions getPluginOptions() {
-        return () -> Pair.of(RosettaPluginOptions.class, RosettaPluginOptions::addDefaults);
+    @SuppressWarnings("unchecked")
+    private List<RosettaNamespace> getPropertyNamespaces() {
+        Object namespaces = DecompilerContext.getProperty(NAMESPACE_PROPERTY_NAME);
+        if (namespaces == null) {
+            return new ArrayList<>();
+        }
+
+        if (!(namespaces instanceof List)) {
+            DecompilerContext.getLogger().writeMessage("Option " + NAMESPACE_PROPERTY_NAME + " must be an instance of List<RosettaNamespace>. Ignoring.", IFernflowerLogger.Severity.WARN);
+            return new ArrayList<>();
+        }
+
+        return (List<RosettaNamespace>)namespaces;
     }
 
     private @Nullable Path resolveRosettaPath(String directory) {

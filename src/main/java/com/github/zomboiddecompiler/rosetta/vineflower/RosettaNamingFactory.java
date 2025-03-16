@@ -13,10 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 public class RosettaNamingFactory implements IVariableNamingFactory {
-    private final Map<String, RosettaClass> classes;
-    /// Generic variable name provider for when there is no rosetta data
-    private static final IVariableNameProvider DEFAULT = new RosettaGenericNameProvider();
-
     @Override
     public @NotNull IVariableNameProvider createFactory(StructMethod method) {
         RosettaClass rosettaClass = classes.get(method.getClassQualifiedName());
@@ -27,8 +23,6 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
         RosettaExecutable executable = VineflowerUtils.getMatchingExecutable(rosettaClass, method);
 
         if (executable == null) {
-//            ZomboidDecompiler.log.log("No rosetta data found for "
-//                    + method.getClassQualifiedName() + "#" + method.getName());
             return DEFAULT;
         }
 
@@ -36,7 +30,12 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
                                        DecompilerContext.getContextProperty(DecompilerContext.CURRENT_CLASS));
     }
 
-    RosettaNamingFactory(List<RosettaNamespace> namespaces) {
+    private Map<String, RosettaClass> classes;
+
+    /// Generic variable name provider for when there is no rosetta data
+    private static final IVariableNameProvider DEFAULT = new RosettaGenericNameProvider();
+
+    void addClassesFromNamespaces(List<RosettaNamespace> namespaces) {
         classes = VineflowerUtils.buildClassMap(namespaces);
     }
 }

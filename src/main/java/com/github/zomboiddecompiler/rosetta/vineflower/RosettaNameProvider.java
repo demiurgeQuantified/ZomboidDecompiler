@@ -16,7 +16,7 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
 
     /**
      * Gets the 'true' index of a variable from its 'raw' index.
-     * Raw indices jump a number for double width types
+     * Raw indices jump a number for double width types.
      * Raw indices consider 'this' as a function parameter for instance functions.
      * @param index Raw index of the variable.
      * @return True index of the variable.
