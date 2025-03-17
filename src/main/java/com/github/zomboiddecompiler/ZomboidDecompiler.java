@@ -27,7 +27,7 @@ public class ZomboidDecompiler {
 
     public static final int VERSION_MAJOR = 0;
     public static final int VERSION_MINOR = 1;
-    public static final int VERSION_PATCH = 7;
+    public static final int VERSION_PATCH = 8;
 
     private boolean copyDependencies = false;
     private boolean jarGame = false;
