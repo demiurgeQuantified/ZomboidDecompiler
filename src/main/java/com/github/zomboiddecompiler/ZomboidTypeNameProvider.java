@@ -2,17 +2,24 @@ package com.github.zomboiddecompiler;
 
 import com.github.zomboiddecompiler.rosetta.vineflower.DefaultTypeNameProvider;
 import com.github.zomboiddecompiler.rosetta.vineflower.ITypeNameProvider;
+import com.github.zomboiddecompiler.rosetta.vineflower.VineflowerUtils;
+import org.jetbrains.java.decompiler.struct.gen.VarType;
 
 import java.util.Map;
 
 public class ZomboidTypeNameProvider implements ITypeNameProvider {
     @Override
-    public String renameType(String typeName) {
+    public String nameVar(VarType type) {
+        String typeName = VineflowerUtils.getRawTypeName(type);
         if (TYPE_NAME_OVERRIDES.containsKey(typeName)) {
-            return TYPE_NAME_OVERRIDES.get(typeName);
+            typeName = TYPE_NAME_OVERRIDES.get(typeName);
+            if (type.arrayDim > 0) {
+                typeName += "s";
+            }
+            return typeName;
         }
 
-        typeName = DEFAULT_TYPE_NAME_PROVIDER.renameType(typeName);
+        typeName = DEFAULT_TYPE_NAME_PROVIDER.nameVar(type);
         if (typeName.startsWith("iso")) {
             typeName = typeName.substring(3);
         }

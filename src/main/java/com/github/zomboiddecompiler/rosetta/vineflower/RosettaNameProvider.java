@@ -29,6 +29,7 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
 
         int i = 0;
         // FIXME: this doesn't account for wide local variables
+        // VarType has getStackSize that could be used for this but would need to rewrite this whole method
         while (i < index && i < executable.getParameters().size()) {
             String parameterType = executable.getParameters().get(i).getType();
             if (Objects.equals(parameterType, "long")

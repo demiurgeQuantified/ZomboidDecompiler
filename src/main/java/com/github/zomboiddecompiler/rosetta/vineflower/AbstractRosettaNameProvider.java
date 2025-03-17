@@ -1,12 +1,10 @@
 package com.github.zomboiddecompiler.rosetta.vineflower;
 
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerLogger;
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
-import org.jetbrains.java.decompiler.struct.StructClass;
 import org.jetbrains.java.decompiler.struct.gen.VarType;
 
 import javax.lang.model.SourceVersion;
@@ -49,11 +47,11 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
      * @param type The type of the variable.
      * @return Pretty name for the variable.
      */
-    private String getDefaultVariableName(String type) {
+    private String getDefaultVariableName(VarType type) {
         Object nameProvider = DecompilerContext.getProperty(RosettaPlugin.TYPE_NAMER_PROPERTY_NAME);
         if (nameProvider != null) {
             if (nameProvider instanceof ITypeNameProvider) {
-                return ((ITypeNameProvider)nameProvider).renameType(type);
+                return ((ITypeNameProvider)nameProvider).nameVar(type);
             } else if (!invalidTypeNameProviderWarned) {
                 DecompilerContext.getLogger().writeMessage(
                         "Type name provider must be an instance of ITypeNameProvider. Ignoring.",
@@ -61,7 +59,7 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
                 invalidTypeNameProviderWarned = true;
             }
         }
-        return DEFAULT_NAME_PROVIDER.renameType(type);
+        return DEFAULT_NAME_PROVIDER.nameVar(type);
     }
 
     /**
@@ -78,8 +76,7 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
         // the string is used so that type names that end up the same will share an id space
         Map<String, List<VarVersionPair>> variableTypeMap = new LinkedHashMap<>();
         for (var entry : variables.entrySet()) {
-            String typeName = getDefaultVariableName(
-                    VineflowerUtils.getRawTypeName(entry.getValue()));
+            String typeName = getDefaultVariableName(entry.getValue());
             variableTypeMap.putIfAbsent(typeName, new ArrayList<>());
             variableTypeMap.get(typeName).add(entry.getKey());
         }

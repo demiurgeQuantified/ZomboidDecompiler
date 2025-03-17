@@ -16,6 +16,12 @@ import java.util.Map;
 import java.util.Objects;
 
 public class VineflowerUtils {
+    /**
+     * Returns the 'raw' name of the type represented by a VarType.
+     * If the variable is an array type, this will not be represented in the returned string.
+     * @param varType The VarType.
+     * @return Raw name of the represented type.
+     */
     public static String getRawTypeName(VarType varType) {
         assert varType.value != null;
         return switch (varType.type) {

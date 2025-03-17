@@ -4,14 +4,45 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.struct.StructClass;
+import org.jetbrains.java.decompiler.struct.gen.VarType;
+import org.jetbrains.java.decompiler.struct.gen.generics.GenericType;
+
+import java.util.Map;
+import java.util.Set;
 
 public class DefaultTypeNameProvider implements ITypeNameProvider {
+    @Override
+    public String nameVar(VarType type) {
+        String typeName = VineflowerUtils.getRawTypeName(type);
+
+        // in practice, it doesn't seem like isGeneric() ever returns true
+        // this may start working when the generic inference plugin is written
+//        if (COLLECTION_TYPES.contains(typeName) && type.isGeneric()) {
+//            GenericType genericType = (GenericType)type;
+//            if (!genericType.isTypeUnfinished()) {
+//                return nameVar(genericType.getArguments().get(0)) + "s";
+//            }
+//        }
+
+        if (TYPE_NAME_OVERRIDES.containsKey(typeName)) {
+            typeName = TYPE_NAME_OVERRIDES.get(typeName);
+        } else {
+            typeName = trimPackages(typeName);
+            typeName = trimOuterClasses(typeName);
+            typeName = trimInterfacePrefix(typeName);
+        }
+        if (type.arrayDim > 0) {
+            typeName = typeName + "s";
+        }
+        return convertToCamelCase(typeName);
+    }
+
     /**
      * Removes package names from a fully qualified type name.
      * @param typeName A fully qualified type name.
      * @return The same type name, with the package names removed.
      */
-    public String trimPackages(String typeName) {
+    public static String trimPackages(String typeName) {
         return typeName.substring(typeName.lastIndexOf("/") + 1);
     }
 
@@ -22,7 +53,7 @@ public class DefaultTypeNameProvider implements ITypeNameProvider {
      * @return The name with the I prefix removed.
      * The unmodified name will be returned if it was not an interface or the prefix was not detected.
      */
-    public String trimInterfacePrefix(String typeName) {
+    public static String trimInterfacePrefix(String typeName) {
         // if the class is an interface,
         // and its name starts with I followed by a capital and then non-capital letter, remove the I
         // e.g. IVariableNameProvider -> VariableNameProvider
@@ -45,26 +76,33 @@ public class DefaultTypeNameProvider implements ITypeNameProvider {
      * @param typeName The name of a type.
      * @return The type name trimmed down to the innermost type name.
      */
-    public String trimOuterClasses(String typeName) {
+    public static String trimOuterClasses(String typeName) {
         return typeName.substring(typeName.lastIndexOf('$') + 1);
     }
 
-    @Override
-    public String renameType(String typeName) {
-        typeName = trimPackages(typeName);
-        typeName = trimOuterClasses(typeName);
-        typeName = trimInterfacePrefix(typeName);
-        return convertToCamelCase(typeName);
-    }
+    /// Types in this set are named like array types (plural of type name).
+    private static final Set<String> COLLECTION_TYPES = Set.of(
+            "java/util/ArrayList",
+            "java/util/Set",
+            "java/util/Vector",
+            "java/util/HashMap",
+            "java/util/LinkedHashMap",
+            "java/util/HashSet",
+            "java/util/LinkedHashSet"
+    );
 
-    private String convertToCamelCase(String str) {
+    private static final Map<String, String> TYPE_NAME_OVERRIDES = Map.of(
+            "java/lang/Class", "clazz"
+    );
+
+    private static String convertToCamelCase(String str) {
         if (isAllUpperCase(str)) {
             return str.toLowerCase();
         }
         return str.substring(0, 1).toLowerCase() + str.substring(1);
     }
 
-    private boolean isAllUpperCase(String str) {
+    private static boolean isAllUpperCase(String str) {
         for (int i = 0; i < str.length(); i++) {
             if (Character.isLowerCase(str.codePointAt(i))) {
                 return false;
