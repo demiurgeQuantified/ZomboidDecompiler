@@ -18,6 +18,7 @@ import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.java.decompiler.api.Decompiler;
 import org.jetbrains.java.decompiler.main.decompiler.DirectoryResultSaver;
 import org.jetbrains.java.decompiler.main.decompiler.PrintStreamLogger;
+import org.jetbrains.java.decompiler.main.extern.IFernflowerPreferences;
 
 public class ZomboidDecompiler {
     /// Main program log.
@@ -180,17 +181,18 @@ public class ZomboidDecompiler {
         Decompiler.Builder builder = Decompiler.builder()
                 .inputs(new ZomboidContextSource(gamePath.toFile()))
                 .output(new DirectoryResultSaver(outputPath.toFile()))
-                .option("ascii-strings", true)
-                .option("banner",
+                .option(IFernflowerPreferences.ASCII_STRING_CHARACTERS, true)
+                .option(IFernflowerPreferences.BANNER,
                         String.format("// Decompiled on %tc with Zomboid Decompiler v%d.%d.%d using Vineflower.\n",
                                       System.currentTimeMillis(), VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH))
-                .option("error-message", "Please report this to the Zomboid Decompiler issue tracker at https://github.com/demiurgeQuantified/ZomboidDecompiler/issues with the file name and game version.")
+                .option(IFernflowerPreferences.ERROR_MESSAGE, "Please report this to the Zomboid Decompiler issue tracker at https://github.com/demiurgeQuantified/ZomboidDecompiler/issues with the file name and game version.")
                 //.option("log-level", "warn")
                 .libraries(dependencyFiles)
                 .logger(vineflowerLog instanceof StreamLogger fileLogger
                         ? new PrintStreamLogger(fileLogger.getStream())
                         : null)
-                .option("indent-string", "    ")
+                .option(IFernflowerPreferences.INCLUDE_JAVA_RUNTIME, "current")
+                .option(IFernflowerPreferences.INDENT_STRING, "    ")
                 .option(RosettaPlugin.NAMESPACE_PROPERTY_NAME, getResourceNamespaces())
                 .option(RosettaPlugin.TYPE_NAMER_PROPERTY_NAME, new ZomboidTypeNameProvider());
 
