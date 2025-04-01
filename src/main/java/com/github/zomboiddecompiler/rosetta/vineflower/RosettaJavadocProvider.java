@@ -92,7 +92,7 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
         return javadoc.toString();
     }
 
-    public void addClassesFromNamespaces(List<RosettaNamespace> classes) {
+    public void addClassesFromNamespaces(List<RosettaPackage> classes) {
         this.classes = VineflowerUtils.buildClassMap(classes);
     }
 

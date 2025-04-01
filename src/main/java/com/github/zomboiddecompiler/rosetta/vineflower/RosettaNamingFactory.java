@@ -2,7 +2,7 @@ package com.github.zomboiddecompiler.rosetta.vineflower;
 
 import com.github.zomboiddecompiler.rosetta.RosettaClass;
 import com.github.zomboiddecompiler.rosetta.RosettaExecutable;
-import com.github.zomboiddecompiler.rosetta.RosettaNamespace;
+import com.github.zomboiddecompiler.rosetta.RosettaPackage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.java.decompiler.main.DecompilerContext;
 import org.jetbrains.java.decompiler.main.extern.IVariableNameProvider;
@@ -35,7 +35,7 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
     /// Generic variable name provider for when there is no rosetta data
     private static final IVariableNameProvider DEFAULT = new RosettaGenericNameProvider();
 
-    void addClassesFromNamespaces(List<RosettaNamespace> namespaces) {
+    void addClassesFromNamespaces(List<RosettaPackage> namespaces) {
         classes = VineflowerUtils.buildClassMap(namespaces);
     }
 }

@@ -10,7 +10,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.stream.Stream;
 
-import com.github.zomboiddecompiler.rosetta.RosettaNamespace;
+import com.github.zomboiddecompiler.rosetta.RosettaPackage;
 import com.github.zomboiddecompiler.rosetta.RosettaParser;
 import com.github.zomboiddecompiler.rosetta.vineflower.RosettaJavadocProvider;
 import com.github.zomboiddecompiler.rosetta.vineflower.RosettaPlugin;
@@ -242,7 +242,7 @@ public class ZomboidDecompiler {
 
     public record VineflowerArgument(String parameter, Object value) {}
 
-    private static List<RosettaNamespace> getResourceNamespaces() {
+    private static List<RosettaPackage> getResourceNamespaces() {
         URL rosettaURL = ZomboidDecompiler.class.getClassLoader().getResource("rosetta");
         if (rosettaURL != null) {
             try {
@@ -259,7 +259,7 @@ public class ZomboidDecompiler {
                     RosettaParser parser = new RosettaParser();
                     parser.parseDirectory(rosettaPath);
 
-                    return parser.namespaces;
+                    return parser.packages;
                 }
             } catch (URISyntaxException | IOException e) {
                 log.log(e);

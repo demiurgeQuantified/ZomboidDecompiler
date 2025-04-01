@@ -1,6 +1,6 @@
 package com.github.zomboiddecompiler.rosetta.vineflower;
 
-import com.github.zomboiddecompiler.rosetta.RosettaNamespace;
+import com.github.zomboiddecompiler.rosetta.RosettaPackage;
 import com.github.zomboiddecompiler.rosetta.RosettaParser;
 import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +47,7 @@ public class RosettaPlugin implements Plugin {
     }
 
     public RosettaPlugin() {
-        List<RosettaNamespace> namespaces = loadNamespaces();
+        List<RosettaPackage> namespaces = loadNamespaces();
 
         IFabricJavadocProvider javadocProvider = (IFabricJavadocProvider)DecompilerContext.getProperty(IFabricJavadocProvider.PROPERTY_NAME);
         if (javadocProvider instanceof RosettaJavadocProvider rosettaProvider) {
@@ -59,8 +59,8 @@ public class RosettaPlugin implements Plugin {
 
     private final RosettaNamingFactory namingFactory = new RosettaNamingFactory();
 
-    private List<RosettaNamespace> loadNamespaces() {
-        List<RosettaNamespace> namespaces = new ArrayList<>();
+    private List<RosettaPackage> loadNamespaces() {
+        List<RosettaPackage> namespaces = new ArrayList<>();
 
         String rosettaDir = (String)DecompilerContext.getProperty(RosettaPluginOptions.ROSETTA_DIRECTORY);
         if (rosettaDir != null) {
@@ -70,7 +70,7 @@ public class RosettaPlugin implements Plugin {
             } else {
                 RosettaParser parser = new RosettaParser();
                 parser.parseDirectory(rosettaPath);
-                namespaces.addAll(parser.namespaces);
+                namespaces.addAll(parser.packages);
             }
         }
 
@@ -80,7 +80,7 @@ public class RosettaPlugin implements Plugin {
     }
 
     @SuppressWarnings("unchecked")
-    private List<RosettaNamespace> getPropertyNamespaces() {
+    private List<RosettaPackage> getPropertyNamespaces() {
         Object namespaces = DecompilerContext.getProperty(NAMESPACE_PROPERTY_NAME);
         if (namespaces == null) {
             return new ArrayList<>();
@@ -91,7 +91,7 @@ public class RosettaPlugin implements Plugin {
             return new ArrayList<>();
         }
 
-        return (List<RosettaNamespace>)namespaces;
+        return (List<RosettaPackage>)namespaces;
     }
 
     private @Nullable Path resolveRosettaPath(String directory) {

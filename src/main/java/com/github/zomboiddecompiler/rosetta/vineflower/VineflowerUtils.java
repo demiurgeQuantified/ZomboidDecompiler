@@ -95,9 +95,9 @@ public class VineflowerUtils {
         return null;
     }
 
-    public static Map<String, RosettaClass> buildClassMap(List<RosettaNamespace> namespaces) {
+    public static Map<String, RosettaClass> buildClassMap(List<RosettaPackage> namespaces) {
         Map<String, RosettaClass> classes = new HashMap<>();
-        for (RosettaNamespace namespace : namespaces) {
+        for (RosettaPackage namespace : namespaces) {
             for (RosettaClass clazz: namespace.getClasses()) {
                 // convert the class name into the format vineflower gives them
                 classes.put(namespace.getName().replace(".", "/") + "/" +

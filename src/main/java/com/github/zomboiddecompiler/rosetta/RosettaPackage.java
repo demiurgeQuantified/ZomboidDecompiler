@@ -3,7 +3,7 @@ package com.github.zomboiddecompiler.rosetta;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RosettaNamespace {
+public class RosettaPackage {
     private final String name;
     private final List<RosettaClass> classes = new ArrayList<>();
 
@@ -13,14 +13,14 @@ public class RosettaNamespace {
 
     public void addClass(RosettaClass clazz) {
         classes.add(clazz);
-        clazz.namespace = this;
+        clazz.pkg = this;
     }
 
     public List<RosettaClass> getClasses() {
         return classes;
     }
 
-    public RosettaNamespace(String name) {
+    public RosettaPackage(String name) {
         this.name = name;
     }
 }

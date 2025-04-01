@@ -14,7 +14,7 @@ public class RosettaClass {
     private final List<RosettaConstructor> constructors = new ArrayList<>();
     private String notes = "";
 
-    RosettaNamespace namespace = null;
+    RosettaPackage pkg = null;
 
     public void addMethod(RosettaMethod method) {
         methods.add(method);
@@ -40,8 +40,8 @@ public class RosettaClass {
      * @return Qualified name of the class.
      */
     public String getQualifiedName() {
-        if (namespace != null) {
-            return namespace.getName() + "." + name;
+        if (pkg != null) {
+            return pkg.getName() + "." + name;
         }
         return name;
     }
@@ -58,8 +58,8 @@ public class RosettaClass {
         return name;
     }
 
-    public @Nullable RosettaNamespace getNamespace() {
-        return namespace;
+    public @Nullable RosettaPackage getPackage() {
+        return pkg;
     }
 
     public List<RosettaConstructor> getConstructors() {

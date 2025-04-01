@@ -12,7 +12,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 public class RosettaParser {
-    public final List<RosettaNamespace> namespaces = new ArrayList<>();
+    public final List<RosettaPackage> packages = new ArrayList<>();
 
     public void parseDirectory(Path directory) {
         Path jsonDirectory = directory.resolve("json");
@@ -42,14 +42,20 @@ public class RosettaParser {
             }
         } catch (IOException e) {
             e.printStackTrace();
+            return;
         }
 
         String sourceString = source.toString().replace("\n", "");
         JSONObject json = new JSONObject(sourceString);
-        JSONObject jsonNamespaces = json.getJSONObject("namespaces");
-        for (String namespaceName : jsonNamespaces.keySet()) {
-            namespaces.add(
-                    parseNamespace(jsonNamespaces.getJSONObject(namespaceName), namespaceName));
+
+        if (!json.has("version") || !json.getString("version").equals("1.1")) {
+            throw new RuntimeException("File is not a recognised Rosetta version.");
+        }
+
+        JSONObject jsonPackages = json.getJSONObject("languages").getJSONObject("java").getJSONObject("packages");
+        for (String packageName : jsonPackages.keySet()) {
+            packages.add(
+                    parseNamespace(jsonPackages.getJSONObject(packageName), packageName));
         }
     }
 
@@ -58,15 +64,15 @@ public class RosettaParser {
         return type.getString("basic");
     }
 
-    private RosettaNamespace parseNamespace(JSONObject namespace, String name) {
-        RosettaNamespace rosettaNamespace = new RosettaNamespace(name);
+    private RosettaPackage parseNamespace(JSONObject namespace, String name) {
+        RosettaPackage rosettaPackage = new RosettaPackage(name);
 
         for(String clazzName : namespace.keySet()) {
-            rosettaNamespace.addClass(
+            rosettaPackage.addClass(
                     parseClass(namespace.getJSONObject(clazzName), clazzName));
         }
 
-        return rosettaNamespace;
+        return rosettaPackage;
     }
 
     private RosettaClass parseClass(JSONObject clazz, String name) {
@@ -81,22 +87,23 @@ public class RosettaParser {
             }
         }
 
+        JSONArray staticMethods = clazz.optJSONArray("staticMethods");
+        if (staticMethods != null) {
+            for (int i = 0; i < staticMethods.length(); i++) {
+                rosettaClass.addMethod(
+                        parseMethod(
+                                staticMethods.getJSONObject(i)));
+            }
+        }
+
         JSONObject fields = clazz.optJSONObject("fields");
         if (fields != null) {
-            JSONArray fieldKeys = fields.names();
-            for (Object keyObj : fieldKeys.toList()) {
-                if (!(keyObj instanceof String key)) {
-                    // throw a warning or something
-                    continue;
-                }
-                JSONObject field = fields.getJSONObject(key);
+            parseFieldArray(fields, rosettaClass);
+        }
 
-                RosettaField rosettaField = new RosettaField(field.getString("name"),
-                                                             parseType(field.getJSONObject("type")));
-                rosettaField.setNotes(field.optString("notes"));
-
-                rosettaClass.addField(rosettaField);
-            }
+        JSONObject staticFields = clazz.optJSONObject("staticFields");
+        if (staticFields != null) {
+            parseFieldArray(staticFields, rosettaClass);
         }
         
         JSONArray constructors = clazz.optJSONArray("constructors");
@@ -110,6 +117,27 @@ public class RosettaParser {
         rosettaClass.setNotes(clazz.optString("notes"));
 
         return rosettaClass;
+    }
+
+    private void parseFieldArray(JSONObject fields, RosettaClass rosettaClass) {
+        if (fields.isEmpty()) {
+            return;
+        }
+
+        JSONArray keys = fields.names();
+        for (Object keyObj : keys.toList()) {
+            if (!(keyObj instanceof String key)) {
+                // could throw a warning or something
+                continue;
+            }
+            JSONObject field = fields.getJSONObject(key);
+
+            RosettaField rosettaField = new RosettaField(field.getString("name"),
+                                                         parseType(field.getJSONObject("type")));
+            rosettaField.setNotes(field.optString("notes"));
+
+            rosettaClass.addField(rosettaField);
+        }
     }
 
     private RosettaReturn parseReturn(JSONObject returns) {
@@ -144,7 +172,7 @@ public class RosettaParser {
 
     private RosettaMethod parseMethod(JSONObject method) {
         RosettaMethod rosettaMethod = new RosettaMethod(
-                method.getString("name"), parseReturn(method.getJSONObject("returns")));
+                method.getString("name"), parseReturn(method.getJSONObject("return")));
 
         JSONArray parameters = method.optJSONArray("parameters");
         if (parameters != null) {
