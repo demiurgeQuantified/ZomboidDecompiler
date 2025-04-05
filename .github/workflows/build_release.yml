@@ -12,15 +12,18 @@ jobs:
     steps:
       - name: Install JDK
         uses: actions/setup-java@v4.7.0
+        with:
+          distribution: 'temurin'
+          java-version: 21
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4.3.1
       - name: Checkout
         uses: actions/checkout@v4
       - name: Build
-        run: ./gradlew distZip
+        run:
+          ./gradlew distZip
       - name: Add build to release
-        run: |
-          cd ${{github.workspace}}
+        run:
           gh release upload ${{github.event.release.tag_name}} build/distributions/ZomboidDecompiler.zip
         env:
           GITHUB_TOKEN: ${{ github.TOKEN }}
