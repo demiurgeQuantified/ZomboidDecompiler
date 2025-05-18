@@ -34,7 +34,6 @@ public abstract class AbstractRosettaNameProvider implements IVariableNameProvid
      * @return A valid name for a Java variable.
      */
     private String getValidName(String name, @Nullable Set<String> invalidNames) {
-        // TODO: if the user specifies a source version, use that version here
         if (!SourceVersion.isName(name) || (invalidNames != null && invalidNames.contains(name))) {
             name = "_" + name;
             assert SourceVersion.isName(name) && (invalidNames == null || !invalidNames.contains(name));
