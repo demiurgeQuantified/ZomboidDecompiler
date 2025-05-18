@@ -29,8 +29,11 @@ public class ZomboidDecompiler {
     public static final int VERSION_MINOR = 1;
     public static final int VERSION_PATCH = 8;
 
+    /// Whether to make a copy of all detected dependencies to output/dependencies
     private boolean copyDependencies = false;
+    /// Whether to create a jar file containing all detected source files.
     private boolean jarGame = false;
+    /// Whether to add docstrings to objects that have appropriate Rosetta data.
     private boolean addDocstrings = true;
     /// Whether to change the line mappings in the original source files to align with the decompiled source.
     private boolean remapLineNumbers = false;
