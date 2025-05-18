@@ -26,9 +26,13 @@ The decompiled source code will be written to `output/`, along with the dependen
 - Automatic gathering of game dependencies as decompilation context and for future recompilation.
 - Renaming of function parameters using Rosetta data.
 - Renaming of other variables according to type to enhance readability.
+- Line number remapping for remote debugging.
 
 ## Command Line Interface
 Launch with ``-h`` or ``--help`` for information about command line parameters.
+
+## Remote debugging
+A basic guide on using ZomboidDecompiler for remote debugging is hosted [here](https://github.com/demiurgeQuantified/PZModdingGuides/blob/main/guides/RemoteDebugging.md).
 
 ## Building
 ZomboidDecompiler can be built with `gradlew build`.  
