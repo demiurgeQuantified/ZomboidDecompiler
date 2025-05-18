@@ -26,8 +26,8 @@ public class ZomboidDecompiler {
     private static ILogger vineflowerLog = new DummyLogger();
 
     public static final int VERSION_MAJOR = 0;
-    public static final int VERSION_MINOR = 1;
-    public static final int VERSION_PATCH = 8;
+    public static final int VERSION_MINOR = 2;
+    public static final int VERSION_PATCH = 0;
 
     /// Whether to make a copy of all detected dependencies to output/dependencies
     private boolean copyDependencies = false;
