@@ -30,6 +30,12 @@ public class Decompile implements Callable<Integer> {
             "Useful for recompiling single files.")
     private boolean jarGame = true;
 
+    @Option(names = {"--remap-line-numbers"}, description = "If true, the line numbers in the original source files will " +
+            "be remapped to the decompiled source line numbers. This will allow you to attach the game to a debugger. " +
+            "Please keep in mind that this will modify your base game files. This should not affect any actual code " +
+            "execution, and in current versions of the game should not trigger anti-cheat.")
+    private boolean remapLineNumbers = false;
+
     @Parameters(index = "0", arity = "0..1")
     private Path inputPath = null;
     @Parameters(index = "1", arity = "0..1")
@@ -179,6 +185,7 @@ public class Decompile implements Callable<Integer> {
         decompiler.setCopyDependencies(copyDependencies);
         decompiler.setJarGame(jarGame);
         decompiler.setAddDocstrings(addDocstrings);
+        decompiler.setRemapLineNumbers(remapLineNumbers);
         decompiler.decompile(inputPath, outputPath, argsList);
 
         return 0;

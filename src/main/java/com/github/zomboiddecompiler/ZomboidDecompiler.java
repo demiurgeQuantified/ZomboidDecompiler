@@ -16,7 +16,6 @@ import com.github.zomboiddecompiler.rosetta.vineflower.RosettaJavadocProvider;
 import com.github.zomboiddecompiler.rosetta.vineflower.RosettaPlugin;
 import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.java.decompiler.api.Decompiler;
-import org.jetbrains.java.decompiler.main.decompiler.DirectoryResultSaver;
 import org.jetbrains.java.decompiler.main.decompiler.PrintStreamLogger;
 import org.jetbrains.java.decompiler.main.extern.IFernflowerPreferences;
 
@@ -33,6 +32,8 @@ public class ZomboidDecompiler {
     private boolean copyDependencies = false;
     private boolean jarGame = false;
     private boolean addDocstrings = true;
+    /// Whether to change the line mappings in the original source files to align with the decompiled source.
+    private boolean remapLineNumbers = false;
 
     public void setCopyDependencies(boolean copyDependencies) {
         this.copyDependencies = copyDependencies;
@@ -44,6 +45,10 @@ public class ZomboidDecompiler {
 
     public void setAddDocstrings(boolean addDocstrings) {
         this.addDocstrings = addDocstrings;
+    }
+
+    public void setRemapLineNumbers(boolean remapLineNumbers) {
+        this.remapLineNumbers = remapLineNumbers;
     }
 
     /**
@@ -178,9 +183,11 @@ public class ZomboidDecompiler {
             dependencyFiles[i] = dependencies.get(i).toFile();
         }
 
+        ZomboidResultSaver resultSaver = new ZomboidResultSaver(outputPath, gamePath);
+
         Decompiler.Builder builder = Decompiler.builder()
                 .inputs(new ZomboidContextSource(gamePath.toFile()))
-                .output(new DirectoryResultSaver(outputPath.toFile()))
+                .output(resultSaver)
                 .option(IFernflowerPreferences.ASCII_STRING_CHARACTERS, true)
                 .option(IFernflowerPreferences.BANNER,
                         String.format("// Decompiled on %tc with Zomboid Decompiler v%d.%d.%d using Vineflower.\n",
@@ -198,6 +205,13 @@ public class ZomboidDecompiler {
 
         if (addDocstrings) {
             builder.option(IFabricJavadocProvider.PROPERTY_NAME, new RosettaJavadocProvider());
+        }
+
+        if (remapLineNumbers) {
+            // tells the decompiler to map bytecode to decompiled source lines
+            builder.option(IFernflowerPreferences.BYTECODE_SOURCE_MAPPING, true);
+            // use that data to remap the line numbers in the class files
+            resultSaver.setRemapLineNumbers(true);
         }
 
         for (VineflowerArgument argument: vineflowerArgs) {

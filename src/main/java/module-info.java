@@ -6,6 +6,8 @@ module com.github.zomboiddecompiler {
     requires vineflower;
     requires info.picocli;
     requires java.compiler;
+    requires org.objectweb.asm;
+    requires jdk.jdi;
 
     provides org.jetbrains.java.decompiler.api.plugin.Plugin with
             RosettaPlugin;
