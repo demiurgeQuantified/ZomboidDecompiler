@@ -1,5 +1,6 @@
 package com.github.zomboiddecompiler.commands;
 
+import com.github.zomboiddecompiler.OutLogger;
 import com.github.zomboiddecompiler.steam.VDFBlock;
 import com.github.zomboiddecompiler.ZomboidDecompiler;
 import org.jetbrains.annotations.Nullable;
@@ -180,6 +181,7 @@ public class Decompile implements Callable<Integer> {
         }
 
         ZomboidDecompiler.initLoggers(logPath);
+        ZomboidDecompiler.log = new OutLogger(ZomboidDecompiler.log);
 
         ZomboidDecompiler decompiler = new ZomboidDecompiler();
         decompiler.setCopyDependencies(copyDependencies);
