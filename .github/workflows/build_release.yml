@@ -17,8 +17,13 @@ jobs:
           java-version: 17
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4.3.1
-      - name: Checkout
-        uses: actions/checkout@v4
+      - name: Checkout ZomboidDecompiler
+        uses: actions/checkout@v5
+      - name: Checkout Rosetta
+        uses: actions/checkout@v5
+        with:
+          repository: "demiurgeQuantified/pz-rosetta-source"
+          path: "ZomboidDecompiler/src/main/resources/rosetta"
       - name: Build
         run:
           ./gradlew distZip
