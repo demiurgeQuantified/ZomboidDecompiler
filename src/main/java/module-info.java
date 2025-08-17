@@ -8,6 +8,7 @@ module com.github.zomboiddecompiler {
     requires java.compiler;
     requires org.objectweb.asm;
     requires jdk.jdi;
+    requires org.snakeyaml.engine.v2;
 
     provides org.jetbrains.java.decompiler.api.plugin.Plugin with
             RosettaPlugin;

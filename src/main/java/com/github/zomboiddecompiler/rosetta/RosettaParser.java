@@ -1,32 +1,39 @@
 package com.github.zomboiddecompiler.rosetta;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
+import org.snakeyaml.engine.v2.api.Load;
+import org.snakeyaml.engine.v2.api.LoadSettings;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.stream.Stream;
 
-public class RosettaParser {
+
+@SuppressWarnings("unchecked") public class RosettaParser {
     public final List<RosettaPackage> packages = new ArrayList<>();
 
     public void parseDirectory(Path directory) {
-        Path jsonDirectory = directory.resolve("json");
-        if (Files.exists(jsonDirectory)) {
-            directory = jsonDirectory;
-        }
+        assert Files.exists(directory) && Files.isDirectory(directory);
 
         try (Stream<Path> files = Files.walk(directory)) {
             for (Path file : files.toList()) {
-                if (!file.getFileName().toString().toLowerCase().endsWith(".json")) continue;
-                try {
-                    parseJson(Files.newInputStream(file));
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                String fileName = file.getFileName().toString().toLowerCase();
+                if (fileName.endsWith(".json")) {
+                    try {
+                        parseJson(Files.newInputStream(file));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else if (fileName.endsWith(".yml")) {
+                    try {
+                        parseYaml(Files.newInputStream(file));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         } catch (IOException e) {
@@ -34,7 +41,7 @@ public class RosettaParser {
         }
     }
 
-    public void parseJson(InputStream stream) {
+    public boolean parseJson(InputStream stream) {
         StringBuilder source = new StringBuilder();
         try (InputStreamReader reader = new InputStreamReader(stream)) {
             while(reader.ready()) {
@@ -42,166 +49,181 @@ public class RosettaParser {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return;
+            return false;
         }
 
         String sourceString = source.toString().replace("\n", "");
-        JSONObject json = new JSONObject(sourceString);
-
-        if (!json.has("version") || !json.getString("version").equals("1.1")) {
-            throw new RuntimeException("File is not a recognised Rosetta version.");
-        }
-
-        JSONObject jsonPackages = json.getJSONObject("languages").getJSONObject("java").getJSONObject("packages");
-        for (String packageName : jsonPackages.keySet()) {
-            packages.add(
-                    parseNamespace(jsonPackages.getJSONObject(packageName), packageName));
-        }
+        Map<String, Object> json = new JSONObject(sourceString).toMap();
+        return this.parseFile(json);
     }
 
-    private String parseType(JSONObject type) {
+    public boolean parseYaml(InputStream stream) {
+        Map<String, Object> yaml = (Map<String, Object>)RosettaParser.yaml.loadFromInputStream(stream);
+        return this.parseFile(yaml);
+    }
+
+    private static final Load yaml = new Load(LoadSettings.builder().build());
+
+    private boolean parseFile(Map<String, Object> raw) {
+        if (!raw.containsKey("version")
+                || !raw.get("version").equals("1.1")
+                || !raw.containsKey("languages")) {
+            return false;
+        }
+        Map<String, Object> languages = (Map<String, Object>)raw.get("languages");
+
+        if (!languages.containsKey("java")) {
+            return false;
+        }
+        Map<String, Object> java = (Map<String, Object>)languages.get("java");
+
+        if (!java.containsKey("packages")) {
+            return false;
+        }
+        Map<String, Map<String, Object>> packages = (Map<String, Map<String, Object>>)java.get("packages");
+
+        for (Map.Entry<String, Map<String, Object>> pkg : packages.entrySet()) {
+            this.packages.add(parsePackage(pkg.getValue(), pkg.getKey()));
+        }
+
+        return true;
+    }
+
+    private String parseType(Map<String, Object> raw) {
         // FIXME: generic types are not supported
-        return type.getString("basic");
+        return (String)raw.get("basic");
     }
 
-    private RosettaPackage parseNamespace(JSONObject namespace, String name) {
+    private RosettaPackage parsePackage(Map<String, Object> raw, String name) {
         RosettaPackage rosettaPackage = new RosettaPackage(name);
 
-        for(String clazzName : namespace.keySet()) {
+        for(String clazzName : raw.keySet()) {
             rosettaPackage.addClass(
-                    parseClass(namespace.getJSONObject(clazzName), clazzName));
+                    parseClass((Map<String, Object>)raw.get(clazzName), clazzName)
+            );
         }
 
         return rosettaPackage;
     }
 
-    private RosettaClass parseClass(JSONObject clazz, String name) {
+    private RosettaClass parseClass(Map<String, Object> raw, String name) {
         RosettaClass rosettaClass = new RosettaClass(name);
 
-        JSONArray methods = clazz.optJSONArray("methods");
+        List<Map<String, Object>> methods = (List<Map<String, Object>>)raw.get("methods");
         if (methods != null) {
-            for (int i = 0; i < methods.length(); i++) {
+            for (Map<String, Object> method : methods) {
                 rosettaClass.addMethod(
-                        parseMethod(
-                                methods.getJSONObject(i)));
+                        parseMethod(method)
+                );
             }
         }
 
-        JSONArray staticMethods = clazz.optJSONArray("staticMethods");
+        List<Map<String, Object>> staticMethods = (List<Map<String, Object>>)raw.get("staticMethods");
         if (staticMethods != null) {
-            for (int i = 0; i < staticMethods.length(); i++) {
+            for (Map<String, Object> staticMethod : staticMethods) {
                 rosettaClass.addMethod(
-                        parseMethod(
-                                staticMethods.getJSONObject(i)));
+                        parseMethod(staticMethod)
+                );
             }
         }
 
-        JSONObject fields = clazz.optJSONObject("fields");
+        Map<String, Map<String, Object>> fields = (Map<String, Map<String, Object>>)raw.get("fields");
         if (fields != null) {
             parseFieldArray(fields, rosettaClass);
         }
 
-        JSONObject staticFields = clazz.optJSONObject("staticFields");
+        Map<String, Map<String, Object>> staticFields = (Map<String, Map<String, Object>>)raw.get("staticFields");
         if (staticFields != null) {
             parseFieldArray(staticFields, rosettaClass);
         }
-        
-        JSONArray constructors = clazz.optJSONArray("constructors");
+
+        List<Map<String, Object>> constructors = (List<Map<String, Object>>)raw.get("constructors");
         if (constructors != null) {
-            for (int i = 0; i < constructors.length(); i++) {
+            for (Map<String, Object> constructor : constructors) {
                 rosettaClass.addConstructor(
-                        parseConstructor(constructors.getJSONObject(i)));
+                        parseConstructor(constructor)
+                );
             }
         }
 
-        rosettaClass.setNotes(clazz.optString("notes"));
+        rosettaClass.setNotes((String)raw.getOrDefault("notes", ""));
 
         return rosettaClass;
     }
 
-    private void parseFieldArray(JSONObject fields, RosettaClass rosettaClass) {
+    private void parseFieldArray(Map<String, Map<String, Object>> fields, RosettaClass rosettaClass) {
         if (fields.isEmpty()) {
             return;
         }
 
-        JSONArray keys = fields.names();
-        for (Object keyObj : keys.toList()) {
-            if (!(keyObj instanceof String key)) {
-                // could throw a warning or something
-                continue;
-            }
-            JSONObject field = fields.getJSONObject(key);
+        for (Map.Entry<String, Map<String, Object>> entry: fields.entrySet()) {
+            Map<String, Object> field = entry.getValue();
 
-            RosettaField rosettaField = new RosettaField(field.getString("name"),
-                                                         parseType(field.getJSONObject("type")));
-            rosettaField.setNotes(field.optString("notes"));
+            RosettaField rosettaField = new RosettaField((String)field.get("name"),
+                                                         parseType((Map<String, Object>)field.get("type")));
+            rosettaField.setNotes((String)field.getOrDefault("notes", ""));
 
             rosettaClass.addField(rosettaField);
         }
     }
 
-    private RosettaReturn parseReturn(JSONObject returns) {
-        String type = parseType(returns.getJSONObject("type"));
+    private RosettaReturn parseReturn(Map<String, Object> returns) {
+        String type = parseType((Map<String, Object>)returns.get("type"));
         if (type.equalsIgnoreCase("void")) {
             return RosettaReturn.VOID;
         }
         
         RosettaReturn rosettaReturn = new RosettaReturn(
-                returns.optString("name"),
-                parseType(returns.getJSONObject("type"))
+                (String)returns.getOrDefault("name", ""),
+                parseType((Map<String, Object>)returns.get("type"))
         );
 
-        rosettaReturn.setNotes(returns.optString("notes"));
+        rosettaReturn.setNotes((String)returns.getOrDefault("notes", ""));
 
         return rosettaReturn;
     }
 
-    private void parseParameters(RosettaExecutable executable, JSONArray parameters) {
-        for (int i = 0; i < parameters.length(); i++) {
-            JSONObject parameter = parameters.getJSONObject(i);
+    private void parseParameters(RosettaExecutable executable, List<Map<String, Object>> parameters) {
+        for (Map<String, Object> parameter : parameters) {
             RosettaParameter rosettaParameter = new RosettaParameter(
-                    parameter.getString("name"),
-                    parseType(parameter.getJSONObject("type"))
+                    (String)parameter.getOrDefault("name", ""),
+                    parseType((Map<String, Object>)parameter.get("type"))
             );
 
-            rosettaParameter.setNotes(parameter.optString("notes"));
+            rosettaParameter.setNotes((String)parameter.getOrDefault("notes", ""));
 
             executable.addParameter(rosettaParameter);
         }
     }
 
-    private RosettaMethod parseMethod(JSONObject method) {
+    private RosettaMethod parseMethod(Map<String, Object> method) {
         RosettaMethod rosettaMethod = new RosettaMethod(
-                method.getString("name"), parseReturn(method.getJSONObject("return")));
+                (String)method.get("name"), parseReturn((Map<String, Object>)method.get("return")));
 
-        JSONArray parameters = method.optJSONArray("parameters");
+        List<Map<String, Object>> parameters = (List<Map<String, Object>>)method.get("parameters");
         if (parameters != null) {
             parseParameters(rosettaMethod, parameters);
         }
 
-        JSONArray modifiers = method.optJSONArray("modifiers");
-        if (modifiers != null) {
-            for (int i = 0; i < modifiers.length(); i++) {
-                String modifier = modifiers.getString(i);
-                if (Objects.equals(modifier, "static")) {
-                    rosettaMethod.setStatic(true);
-                }
-            }
+        List<String> modifiers = (List<String>)method.get("modifiers");
+        if (modifiers != null && modifiers.contains("static")) {
+            rosettaMethod.setStatic(true);
         }
 
-        rosettaMethod.setNotes(method.optString("notes"));
+        rosettaMethod.setNotes((String)method.getOrDefault("notes", ""));
 
         return rosettaMethod;
     }
 
-    private RosettaConstructor parseConstructor(JSONObject constructor) {
+    private RosettaConstructor parseConstructor(Map<String, Object> constructor) {
         RosettaConstructor rosettaConstructor = new RosettaConstructor();
 
-        JSONArray parameters = constructor.optJSONArray("parameters");
+        List<Map<String, Object>> parameters = (List<Map<String, Object>>)constructor.get("parameters");
         if (parameters != null) {
             parseParameters(rosettaConstructor, parameters);
         }
-        rosettaConstructor.setNotes(constructor.optString("notes"));
+
+        rosettaConstructor.setNotes((String)constructor.getOrDefault("notes", ""));
 
         return rosettaConstructor;
     }
