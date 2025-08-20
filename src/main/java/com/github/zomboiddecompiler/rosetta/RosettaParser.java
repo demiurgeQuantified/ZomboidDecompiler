@@ -147,6 +147,7 @@ import java.util.stream.Stream;
         }
 
         rosettaClass.setNotes((String)raw.getOrDefault("notes", ""));
+        rosettaClass.setDeprecated((boolean)raw.getOrDefault("deprecated", false));
 
         return rosettaClass;
     }
@@ -162,6 +163,7 @@ import java.util.stream.Stream;
             RosettaField rosettaField = new RosettaField((String)field.get("name"),
                                                          parseType((Map<String, Object>)field.get("type")));
             rosettaField.setNotes((String)field.getOrDefault("notes", ""));
+            rosettaField.setDeprecated((boolean)field.getOrDefault("deprecated", false));
 
             rosettaClass.addField(rosettaField);
         }
@@ -211,6 +213,7 @@ import java.util.stream.Stream;
         }
 
         rosettaMethod.setNotes((String)method.getOrDefault("notes", ""));
+        rosettaMethod.setDeprecated((boolean)method.getOrDefault("deprecated", false));
 
         return rosettaMethod;
     }
@@ -224,6 +227,7 @@ import java.util.stream.Stream;
         }
 
         rosettaConstructor.setNotes((String)constructor.getOrDefault("notes", ""));
+        rosettaConstructor.setDeprecated((boolean)constructor.getOrDefault("deprecated", false));
 
         return rosettaConstructor;
     }

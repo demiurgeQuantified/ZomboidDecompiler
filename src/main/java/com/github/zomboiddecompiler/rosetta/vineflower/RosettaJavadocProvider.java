@@ -18,13 +18,19 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
             return null;
         }
 
-        String javadoc = classes.get(clazz.qualifiedName).getNotes();
+        RosettaClass rosettaClass = classes.get(clazz.qualifiedName);
+        JavadocBuilder javadoc = new JavadocBuilder();
+        javadoc.append(rosettaClass.getNotes());
 
-        if (javadoc.isBlank()) {
+        if (rosettaClass.isDeprecated()) {
+            javadoc.append("@deprecated");
+        }
+
+        if (javadoc.isEmpty()) {
             return null;
         }
 
-        return javadoc;
+        return javadoc.build();
     }
 
     @Override
@@ -38,14 +44,20 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
             return null;
         }
 
-        String javadoc= rosettaClazz.getFields().get(field.getName()).getNotes();
+        RosettaField rosettaField = rosettaClazz.getFields().get(field.getName());
+        JavadocBuilder javadoc = new JavadocBuilder();
 
+        javadoc.append(rosettaField.getNotes());
 
-        if (javadoc.isBlank()) {
+        if (rosettaField.isDeprecated()) {
+            javadoc.append("@deprecated");
+        }
+
+        if (javadoc.isEmpty()) {
             return null;
         }
 
-        return javadoc;
+        return javadoc.build();
     }
 
     @Override
@@ -60,43 +72,34 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
             return null;
         }
 
-        boolean anyNotes = false;
+        JavadocBuilder javadoc = new JavadocBuilder();
+        javadoc.append(executable.getNotes());
 
-        String notes = executable.getNotes();
-        if (!notes.isBlank()) {
-            anyNotes = true;
-        }
-
-        StringBuilder javadoc = new StringBuilder(notes);
-
-        javadoc.append(getParameterDoc(clazz, executable));
+        javadoc.append(getParameterDocs(clazz, executable));
 
         if (executable.getReturn() != RosettaReturn.VOID) {
             RosettaReturn returns = executable.getReturn();
-            if (!javadoc.isEmpty()) {
-                javadoc.append("\n");
-            }
-
-            notes = returns.getNotes();
-            if (!notes.isBlank()) {
-                anyNotes = true;
-                javadoc.append("@return ")
-                        .append(notes);
+            if (!returns.getNotes().isBlank()) {
+                javadoc.append("@return " + returns.getNotes());
             }
         }
 
-        if (!anyNotes) {
+        if (executable.isDeprecated()) {
+            javadoc.append("@deprecated");
+        }
+
+        if (javadoc.isEmpty()) {
             return null;
         }
 
-        return javadoc.toString();
+        return javadoc.build();
     }
 
     public void addClassesFromNamespaces(List<RosettaPackage> classes) {
         this.classes = VineflowerUtils.buildClassMap(classes);
     }
 
-    private String getParameterDoc(StructClass clazz, RosettaExecutable executable) {
+    private String getParameterDocs(StructClass clazz, RosettaExecutable executable) {
         StringBuilder parameterBuilder = new StringBuilder();
 
         boolean anyNotes = false;
@@ -121,5 +124,29 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
         }
 
         return parameterBuilder.toString();
+    }
+
+    private static class JavadocBuilder {
+        public void append(String string) {
+            if (string.isBlank()) {
+                return;
+            }
+
+            if (!this.builder.isEmpty()) {
+                this.builder.append("\n");
+            }
+
+            this.builder.append(string);
+        }
+
+        public String build() {
+            return this.builder.toString();
+        }
+
+        public boolean isEmpty() {
+            return this.builder.isEmpty();
+        }
+
+        private final StringBuilder builder = new StringBuilder();
     }
 }

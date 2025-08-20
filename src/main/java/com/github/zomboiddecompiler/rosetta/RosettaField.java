@@ -6,11 +6,16 @@ public class RosettaField {
     private final String name;
     private final String type;
     private String notes = "";
+    private boolean deprecated;
 
     RosettaClass clazz = null;
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
     }
 
     public String getNotes() {
@@ -23,6 +28,10 @@ public class RosettaField {
 
     public String getType() {
         return type;
+    }
+
+    public boolean isDeprecated() {
+        return this.deprecated;
     }
 
     public @Nullable RosettaClass getClazz() {

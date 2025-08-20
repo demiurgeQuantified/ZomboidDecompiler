@@ -8,6 +8,7 @@ import java.util.List;
 public class RosettaConstructor implements RosettaExecutable {
     private final List<RosettaParameter> parameters = new ArrayList<>();
     private String notes = "";
+    private boolean deprecated = false;
 
     RosettaClass clazz = null;
 
@@ -32,12 +33,22 @@ public class RosettaConstructor implements RosettaExecutable {
     }
 
     @Override
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
+    }
+
+    @Override
     public String getNotes() {
         return notes;
     }
 
     public List<RosettaParameter> getParameters() {
         return parameters;
+    }
+
+    @Override
+    public boolean isDeprecated() {
+        return this.deprecated;
     }
 
     @Override

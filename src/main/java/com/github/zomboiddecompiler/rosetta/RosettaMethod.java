@@ -12,6 +12,7 @@ public class RosettaMethod implements RosettaExecutable {
     private final RosettaReturn returns;
     private final List<RosettaParameter> parameters = new ArrayList<>();
     private boolean isStatic = false;
+    private boolean deprecated = false;
 
     RosettaClass clazz = null;
 
@@ -49,6 +50,15 @@ public class RosettaMethod implements RosettaExecutable {
         this.notes = notes;
     }
 
+    public void setStatic(boolean bStatic) {
+        isStatic = bStatic;
+    }
+
+    @Override
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
+    }
+
     @Override
     public String getNotes() {
         return notes;
@@ -72,8 +82,9 @@ public class RosettaMethod implements RosettaExecutable {
         return isStatic;
     }
 
-    public void setStatic(boolean bStatic) {
-        isStatic = bStatic;
+    @Override
+    public boolean isDeprecated() {
+        return this.deprecated;
     }
 
     public @Nullable RosettaClass getClazz() {

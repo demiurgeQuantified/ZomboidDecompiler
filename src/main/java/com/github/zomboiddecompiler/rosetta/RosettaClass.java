@@ -13,6 +13,7 @@ public class RosettaClass {
     private final Map<String, RosettaField> fields = new HashMap<>();
     private final List<RosettaConstructor> constructors = new ArrayList<>();
     private String notes = "";
+    private boolean deprecated = false;
 
     RosettaPackage pkg = null;
 
@@ -33,6 +34,10 @@ public class RosettaClass {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
     }
 
     /**
@@ -66,11 +71,15 @@ public class RosettaClass {
         return constructors;
     }
 
-    RosettaClass(String name) {
-        this.name = name;
-    }
-
     public String getNotes() {
         return notes;
+    }
+
+    public boolean isDeprecated() {
+        return this.deprecated;
+    }
+
+    RosettaClass(String name) {
+        this.name = name;
     }
 }

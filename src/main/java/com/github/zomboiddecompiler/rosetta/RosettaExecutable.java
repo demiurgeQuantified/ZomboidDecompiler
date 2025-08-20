@@ -9,5 +9,8 @@ public interface RosettaExecutable {
     List<RosettaParameter> getParameters();
     void addParameter(RosettaParameter parameter);
 
+     void setDeprecated(boolean deprecated);
+     boolean isDeprecated();
+
     RosettaReturn getReturn();
 }
