@@ -27,7 +27,7 @@ public class ZomboidDecompiler {
 
     public static final int VERSION_MAJOR = 0;
     public static final int VERSION_MINOR = 2;
-    public static final int VERSION_PATCH = 1;
+    public static final int VERSION_PATCH = 2;
 
     /// Whether to make a copy of all detected dependencies to output/dependencies
     private boolean copyDependencies = false;
