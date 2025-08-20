@@ -43,10 +43,46 @@ public class VineflowerUtils {
         return typeName.substring(typeName.lastIndexOf("/") + 1).replace("$", ".");
     }
 
+    private static int countInString(String search, String find) {
+        int count = 0;
+        int lastFound = 0;
+
+        while (true) {
+            lastFound = search.indexOf(find, lastFound);
+            if (lastFound == -1) {
+                break;
+            }
+            count++;
+            lastFound = lastFound + find.length();
+        }
+
+        return count;
+    }
+
+    private static String changeQualificationLevel(String original, int level) {
+        assert countInString(original, ".") >= level;
+
+        int lastDot = original.length();
+        for (int i = 0; i < level + 1; i++) {
+            lastDot = original.lastIndexOf(".", lastDot - 1);
+        }
+
+        return original.substring(lastDot + 1);
+    }
+
+    public static boolean isSameType(VarType vineflowerType, String rosettaType) {
+        String vineflowerTypeName = getTypeName(vineflowerType);
+        int lowestQualificationLevel = Math.min(
+                countInString(vineflowerTypeName, "."),
+                countInString(rosettaType, ".")
+        );
+        rosettaType = changeQualificationLevel(rosettaType, lowestQualificationLevel);
+        vineflowerTypeName = changeQualificationLevel(vineflowerTypeName, lowestQualificationLevel);
+        return rosettaType.equals(vineflowerTypeName);
+    }
+
     public static boolean signaturesMatch(RosettaExecutable executable, MethodDescriptor descriptor) {
-        if (!Objects.equals(
-                executable.getReturn().getType(),
-                getTypeName(descriptor.ret))) {
+        if (!isSameType(descriptor.ret, executable.getReturn().getType())) {
             return false;
         }
 
@@ -59,7 +95,7 @@ public class VineflowerUtils {
             VarType parameterType = parameterTypes[i];
             String rosettaType = executable.getParameters().get(i).getType();
 
-            if (!Objects.equals(getTypeName(parameterType), rosettaType)) {
+            if (!isSameType(parameterType, rosettaType)) {
                 return false;
             }
         }
