@@ -83,16 +83,10 @@ public class ZomboidDecompiler {
             }
         }
 
-        try (FileSystem zipFileSystem = FileSystems.newFileSystem(
-                outDirectory.resolve("loose-dependencies.jar"), ENV))
-        {
+        try {
             for (Path dependency : dependencies) {
                 String dependencyName = dependency.getFileName().toString();
-                if (Files.isDirectory(dependency)) {
-                    FileUtils.copyFileOrDirectory(dependency, zipFileSystem.getPath(dependencyName));
-                } else {
-                    FileUtils.copyFileOrDirectory(dependency, outDirectory.resolve(dependencyName));
-                }
+                FileUtils.copyFileOrDirectory(dependency, outDirectory.resolve(dependencyName));
             }
         } catch (IOException e) {
             log.log(e);
@@ -110,9 +104,7 @@ public class ZomboidDecompiler {
                                 path.getFileName().toString()))
                 .forEach(
                         path -> {
-                            if (Files.isDirectory(path)
-                                    ? containsClassFiles(path)
-                                    : path.getFileName().toString().endsWith(".jar"))
+                            if (path.getFileName().toString().endsWith(".jar"))
                             {
                                 log.log("Discovered dependency: " + path);
                                 dependencies.add(path);
@@ -124,6 +116,8 @@ public class ZomboidDecompiler {
         }
         return dependencies;
     }
+
+    private final Set<String> BAD_CODE_DIRECTORY_NAMES = Set.of("media", "steamapps", "mods", "Workshop");
 
     /**
      * Decompiles the game.
@@ -173,7 +167,20 @@ public class ZomboidDecompiler {
 
         if (jarGame) {
             log.log("Jarring game...");
-            if (FileUtils.zipDirectory(zombieDirectory, outputPath.resolve("zombie.jar"))) {
+
+            List<Path> gameFiles;
+            try(Stream<Path> files = Files.list(gamePath)) {
+                gameFiles = files.filter(
+                        (Path path) -> Files.isRegularFile(path)
+                                ? path.endsWith(".class")
+                                : !BAD_CODE_DIRECTORY_NAMES.contains(path.getFileName().toString()) && containsClassFiles(path)
+                ).toList();
+            } catch (IOException e) {
+                log.log(e);
+                return;
+            }
+
+            if (FileUtils.zipPaths(gameFiles, gamePath, outputPath.resolve("ProjectZomboid.jar"))) {
                 log.log("Game jarred.");
             } else {
                 log.log("Game jarring failed. Aborting because this usually means something is wrong with the game installation.");
@@ -186,7 +193,7 @@ public class ZomboidDecompiler {
             dependencyFiles[i] = dependencies.get(i).toFile();
         }
 
-        ZomboidResultSaver resultSaver = new ZomboidResultSaver(outputPath, gamePath);
+        ZomboidResultSaver resultSaver = new ZomboidResultSaver(outputPath.resolve("source"), gamePath);
 
         Decompiler.Builder builder = Decompiler.builder()
                 .inputs(new ZomboidContextSource(gamePath.toFile()))

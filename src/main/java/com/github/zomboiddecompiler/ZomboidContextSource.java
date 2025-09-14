@@ -11,10 +11,13 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 public class ZomboidContextSource implements IContextSource {
     private final File directory;
     private static final String CLASS_SUFFIX = ".class";
+
+    private final Set<String> BAD_DIRECTORY_NAMES = Set.of("media", "steamapps", "mods", "Workshop");
 
     @Override
     public String getName() {
@@ -26,8 +29,15 @@ public class ZomboidContextSource implements IContextSource {
         List<Entry> classes = new ArrayList<>();
         List<String> directories = new ArrayList<>();
 
-        File zombieDirectory = new File(directory, "zombie");
-        scanDirectory(zombieDirectory, classes, directories);
+        for (File file : Objects.requireNonNull(this.directory.listFiles())) {
+            if (!file.isDirectory() || BAD_DIRECTORY_NAMES.contains(file.getName())) {
+                continue;
+            }
+
+            if (ZomboidDecompiler.containsClassFiles(file.toPath())) {
+                scanDirectory(file, classes, directories);
+            }
+        }
 
         return new Entries(classes, directories, new ArrayList<>(), new ArrayList<>());
     }
