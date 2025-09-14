@@ -28,8 +28,8 @@ jobs:
           path: "src/main/resources/rosetta"
       - name: Delete non-Rosetta files
         run: |
-          rm -i src/main/resources/rosetta/.github/*
-          rm -i src/main/resources/rosetta/.vscode/*
+          rm src/main/resources/rosetta/.github/*
+          rm src/main/resources/rosetta/.vscode/*
 
       - name: Build
         run:
