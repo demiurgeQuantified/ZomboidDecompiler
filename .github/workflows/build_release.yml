@@ -17,16 +17,24 @@ jobs:
           java-version: 17
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4.3.1
+
       - name: Checkout ZomboidDecompiler
         uses: actions/checkout@v5
+
       - name: Checkout Rosetta
         uses: actions/checkout@v5
         with:
           repository: "demiurgeQuantified/pz-rosetta-source"
           path: "src/main/resources/rosetta"
+      - name: Delete non-Rosetta files
+        run:
+          rm -i src/main/resources/rosetta/.github/*
+          rm -i src/main/resources/rosetta/.vscode/*
+
       - name: Build
         run:
           ./gradlew distZip
+
       - name: Add build to release
         run:
           gh release upload ${{github.event.release.tag_name}} build/distributions/ZomboidDecompiler.zip
