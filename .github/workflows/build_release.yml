@@ -28,7 +28,9 @@ jobs:
           path: "pz-rosetta-source"
 
       - name: Move Java Rosetta files
-        run: mv $GITHUB_WORKSPACE/pz-rosetta-source/rosetta/java src/main/resources/rosetta
+        run: |
+          mkdir --parents src/main/resources
+          mv pz-rosetta-source/rosetta/java src/main/resources/rosetta
 
       - name: Build
         run:
