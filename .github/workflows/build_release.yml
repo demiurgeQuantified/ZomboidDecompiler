@@ -21,15 +21,14 @@ jobs:
       - name: Checkout ZomboidDecompiler
         uses: actions/checkout@v5
 
-      - name: Checkout Rosetta
+      - name: Checkout Rosetta source
         uses: actions/checkout@v5
         with:
           repository: "demiurgeQuantified/pz-rosetta-source"
-          path: "src/main/resources/rosetta"
-      - name: Delete non-Rosetta files
-        run: |
-          rm -r src/main/resources/rosetta/.github
-          rm -r src/main/resources/rosetta/.vscode
+          path: "pz-rosetta-source"
+
+      - name: Move Java Rosetta files
+        run: mv pz-rosetta-source/rosetta/java src/main/resources/rosetta
 
       - name: Build
         run:
