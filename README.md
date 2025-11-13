@@ -37,4 +37,5 @@ A basic guide on using ZomboidDecompiler for remote debugging is hosted [here](h
 ## Building
 ZomboidDecompiler can be built with `gradlew build`.  
 You can include Rosetta files in `src/main/resources/rosetta/` to be used as defaults when no rosetta directory is passed.
-The standard binaries in Releases are built with the latest Rosetta included, but when building you must provide these yourself.
+The standard binaries in Releases are built with the
+[latest Rosetta data](https://github.com/demiurgeQuantified/pz-rosetta-source) included.
