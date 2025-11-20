@@ -24,7 +24,7 @@ jobs:
       - name: Checkout Rosetta source
         uses: actions/checkout@v5
         with:
-          repository: "demiurgeQuantified/pz-rosetta-source"
+          repository: "PZ-Umbrella/pz-rosetta-source"
           path: "pz-rosetta-source"
 
       - name: Move Java Rosetta files
