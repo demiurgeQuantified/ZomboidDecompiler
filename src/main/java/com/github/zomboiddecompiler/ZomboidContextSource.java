@@ -5,23 +5,28 @@ import org.jetbrains.java.decompiler.main.extern.IContextSource;
 import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 
-public class ZomboidContextSource implements IContextSource {
-    private final File directory;
+public class ZomboidContextSource implements IContextSource, AutoCloseable {
+    private final Path jar;
     private static final String CLASS_SUFFIX = ".class";
 
-    private final Set<String> BAD_DIRECTORY_NAMES = Set.of("media", "steamapps", "mods", "Workshop");
+    private final Set<String> packages;
+    private final boolean invertPackages;
+    private final FileSystem jarFilesystem;
 
     @Override
     public String getName() {
-        return "Project Zomboid: " + directory.getAbsolutePath();
+        return "Project Zomboid (inverted: " + this.invertPackages + "): " + this.jar.toString();
     }
 
     @Override
@@ -29,40 +34,51 @@ public class ZomboidContextSource implements IContextSource {
         List<Entry> classes = new ArrayList<>();
         List<String> directories = new ArrayList<>();
 
-        for (File file : Objects.requireNonNull(this.directory.listFiles())) {
-            if (!file.isDirectory() || BAD_DIRECTORY_NAMES.contains(file.getName())) {
-                continue;
-            }
+        for (Path root : jarFilesystem.getRootDirectories()) {
+            try(Stream<Path> files = Files.list(root)) {
+                for (Path directory : files.toList()) {
+                    if (!Files.isDirectory(directory)
+                            || invertPackages == packages.contains(directory.getFileName().toString())) {
+                        continue;
+                    }
 
-            if (ZomboidDecompiler.containsClassFiles(file.toPath())) {
-                scanDirectory(file, classes, directories);
+                    if (ZomboidDecompiler.containsClassFiles(directory)) {
+                        scanDirectory(directory, classes, directories);
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
 
         return new Entries(classes, directories, new ArrayList<>(), new ArrayList<>());
     }
 
-    void scanDirectory(final File current, final List<Entry> classes, final List<String> directories) {
-        String relativePath = directory.toPath().relativize(current.toPath())
-                .toString().replace(File.separatorChar, '/');
-        if (current.isDirectory()) {
+    void scanDirectory(final Path current, final List<Entry> classes, final List<String> directories) {
+        String relativePath = current.toString().replace(File.separatorChar, '/');
+        // need to remove leading "/" or it writes to root of disk lol
+        relativePath = relativePath.substring(1);
+        if (Files.isDirectory(current)) {
             directories.add(relativePath);
-            for (File file : Objects.requireNonNull(current.listFiles())) {
-                if (file.isDirectory()) {
-                    scanDirectory(file, classes, directories);
-                } else if (file.getName().endsWith(CLASS_SUFFIX)) {
-                    String fileName = file.getName();
-                    classes.add(Entry.atBase(
-                            relativePath + "/" + fileName.substring(0, fileName.length() - CLASS_SUFFIX.length())));
+            try (Stream<Path> files = Files.list(current)) {
+                for (Path file : files.toList()) {
+                    if (Files.isDirectory(file)) {
+                        scanDirectory(file, classes, directories);
+                    } else if (file.getFileName().toString().endsWith(CLASS_SUFFIX)) {
+                        String fileName = file.getFileName().toString();
+                        classes.add(Entry.atBase(
+                                relativePath + "/" + fileName.substring(0, fileName.length() - CLASS_SUFFIX.length())));
+                    }
                 }
+            } catch (IOException e) {
+                ZomboidDecompiler.log.log(e);
             }
         }
     }
 
     @Override
     public InputStream getInputStream(String className) throws IOException {
-        File classFile = new File(directory, className);
-        return new FileInputStream(classFile);
+        return Files.newInputStream(this.jarFilesystem.getPath(className));
     }
 
     @Override
@@ -71,7 +87,7 @@ public class ZomboidContextSource implements IContextSource {
             @Override
             public void begin() {
                 if (!(saver instanceof ConsoleDecompiler)) {
-                    saver.createArchive(directory.getAbsolutePath(), "", null);
+                    saver.createArchive(jar.toAbsolutePath().toString(), "", null);
                 }
                 saver.saveFolder("");
             }
@@ -88,18 +104,28 @@ public class ZomboidContextSource implements IContextSource {
 
             @Override
             public void acceptOther(String path) {
-                saver.copyFile(new File(directory, path).getAbsolutePath(), "", path);
+                // can't do this from a zip... probably not a big deal
+                // we don't populate the others list anyway
+                // saver.copyFile(new File(jar, path).getAbsolutePath(), "", path);
             }
 
             @Override
             public void close() throws IOException {
-                saver.closeArchive("", directory.getName() + ".jar");
+                saver.closeArchive("", jar.getFileName().toString());
             }
         };
     }
 
-    public ZomboidContextSource(File gameDirectory) {
-        assert gameDirectory.exists() && gameDirectory.isDirectory();
-        directory = gameDirectory;
+    @Override
+    public void close() throws IOException {
+        this.jarFilesystem.close();
+    }
+
+    public ZomboidContextSource(Path jar, Set<String> packages, boolean invertPackages) throws IOException {
+        assert Files.isDirectory(jar);
+        this.jar = jar;
+        this.jarFilesystem = FileSystems.newFileSystem(jar);
+        this.packages = packages;
+        this.invertPackages = invertPackages;
     }
 }

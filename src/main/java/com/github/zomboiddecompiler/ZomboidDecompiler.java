@@ -154,49 +154,37 @@ public class ZomboidDecompiler {
             }
         }
 
-        List<Path> dependencies = findDependencies(gamePath);
+        // FIXME: this takes wayyyyy too long to decompile
+        //  we probably need to unzip (if necessary?) and then only pass certain directories as sources
+        //  see #24
+        Path gameJar = gamePath.resolve("projectzomboid.jar");
 
-        if (copyDependencies) {
-            log.log("Copying dependencies...");
-            if (copyDependencies(dependencies, outputPath.resolve("dependencies"))) {
-                log.log("Dependencies copied.");
-            } else {
-                log.log("Dependency copying failed. Previous log messages may give details.");
-            }
-        }
+        assert Files.isRegularFile(gameJar);
 
         if (jarGame) {
-            log.log("Jarring game...");
-
-            List<Path> gameFiles;
-            try(Stream<Path> files = Files.list(gamePath)) {
-                gameFiles = files.filter(
-                        (Path path) -> Files.isRegularFile(path)
-                                ? path.endsWith(".class")
-                                : !BAD_CODE_DIRECTORY_NAMES.contains(path.getFileName().toString()) && containsClassFiles(path)
-                ).toList();
+            try {
+                FileUtils.copyFileOrDirectory(gameJar, outputPath.resolve("projectzomboid.jar"));
             } catch (IOException e) {
                 log.log(e);
-                return;
             }
-
-            if (FileUtils.zipPaths(gameFiles, gamePath, outputPath.resolve("ProjectZomboid.jar"))) {
-                log.log("Game jarred.");
-            } else {
-                log.log("Game jarring failed. Aborting because this usually means something is wrong with the game installation.");
-                return;
-            }
-        }
-
-        File[] dependencyFiles = new File[dependencies.size()];
-        for (int i = 0; i < dependencies.size(); i++) {
-            dependencyFiles[i] = dependencies.get(i).toFile();
         }
 
         ZomboidResultSaver resultSaver = new ZomboidResultSaver(outputPath.resolve("source"), gamePath);
 
+        ZomboidContextSource gameSource;
+        ZomboidContextSource dependencySource;
+        try {
+            Set<String> WANTED_PACKAGES = Set.of("zombie", "generation");
+            gameSource = new ZomboidContextSource(gameJar, WANTED_PACKAGES, false);
+            dependencySource = new ZomboidContextSource(gameJar, WANTED_PACKAGES, true);
+        } catch (IOException e) {
+            log.log(e);
+            log.log("Aborting decompilation due to exception while opening context source");
+            return;
+        }
+
         Decompiler.Builder builder = Decompiler.builder()
-                .inputs(new ZomboidContextSource(gamePath.toFile()))
+                .inputs(gameSource)
                 .output(resultSaver)
                 .option(IFernflowerPreferences.ASCII_STRING_CHARACTERS, true)
                 .option(IFernflowerPreferences.BANNER,
@@ -204,7 +192,7 @@ public class ZomboidDecompiler {
                                       System.currentTimeMillis(), VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH))
                 .option(IFernflowerPreferences.ERROR_MESSAGE, "Please report this to the Zomboid Decompiler issue tracker at https://github.com/demiurgeQuantified/ZomboidDecompiler/issues with the file name and game version.")
                 //.option("log-level", "warn")
-                .libraries(dependencyFiles)
+                .libraries(dependencySource)
                 .logger(vineflowerLog instanceof StreamLogger fileLogger
                         ? new PrintStreamLogger(fileLogger.getStream())
                         : null)
@@ -217,12 +205,13 @@ public class ZomboidDecompiler {
             builder.option(IFabricJavadocProvider.PROPERTY_NAME, new RosettaJavadocProvider());
         }
 
-        if (remapLineNumbers) {
-            // tells the decompiler to map bytecode to decompiled source lines
-            builder.option(IFernflowerPreferences.BYTECODE_SOURCE_MAPPING, true);
-            // use that data to remap the line numbers in the class files
-            resultSaver.setRemapLineNumbers(true);
-        }
+        // FIXME: this can't rewrite the jar used in 42.13+
+//        if (remapLineNumbers) {
+//            // tells the decompiler to map bytecode to decompiled source lines
+//            builder.option(IFernflowerPreferences.BYTECODE_SOURCE_MAPPING, true);
+//            // use that data to remap the line numbers in the class files
+//            resultSaver.setRemapLineNumbers(true);
+//        }
 
         for (VineflowerArgument argument: vineflowerArgs) {
             builder.option(argument.parameter, argument.value);
@@ -234,6 +223,12 @@ public class ZomboidDecompiler {
         decompiler.decompile();
 
         log.log("Decompilation complete.");
+
+        try {
+            gameSource.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static final Map<String, String> ENV = Map.of(
