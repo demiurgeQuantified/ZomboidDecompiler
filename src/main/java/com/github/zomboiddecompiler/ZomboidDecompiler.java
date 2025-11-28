@@ -196,7 +196,10 @@ public class ZomboidDecompiler {
                 .logger(vineflowerLog instanceof StreamLogger fileLogger
                         ? new PrintStreamLogger(fileLogger.getStream())
                         : null)
-                .option(IFernflowerPreferences.INCLUDE_JAVA_RUNTIME, "current")
+                .option(
+                        IFernflowerPreferences.INCLUDE_JAVA_RUNTIME,
+                        gamePath.resolve("jre64").toAbsolutePath().toString()
+                )
                 .option(IFernflowerPreferences.INDENT_STRING, "    ")
                 .option(RosettaPlugin.NAMESPACE_PROPERTY_NAME, getResourceNamespaces())
                 .option(RosettaPlugin.TYPE_NAMER_PROPERTY_NAME, new ZomboidTypeNameProvider());
