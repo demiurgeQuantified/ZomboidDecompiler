@@ -154,9 +154,6 @@ public class ZomboidDecompiler {
             }
         }
 
-        // FIXME: this takes wayyyyy too long to decompile
-        //  we probably need to unzip (if necessary?) and then only pass certain directories as sources
-        //  see #24
         Path gameJar = gamePath.resolve("projectzomboid.jar");
 
         assert Files.isRegularFile(gameJar);

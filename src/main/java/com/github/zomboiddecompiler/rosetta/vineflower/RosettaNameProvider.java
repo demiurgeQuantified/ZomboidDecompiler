@@ -60,7 +60,10 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
                 result.put(pair, name);
                 takenNames.add(name);
             } else {
-                unknownVariables.put(pair, entry.getValue().a);
+                // invisible this argument to instance methods is null
+                if (entry.getValue().a != null) {
+                    unknownVariables.put(pair, entry.getValue().a);
+                }
             }
         }
 

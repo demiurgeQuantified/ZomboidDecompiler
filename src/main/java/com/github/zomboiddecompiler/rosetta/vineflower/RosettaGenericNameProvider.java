@@ -15,7 +15,10 @@ public class RosettaGenericNameProvider extends AbstractRosettaNameProvider {
         // TODO: if instance method, name of first variable doesn't matter
         // it should not be added in this case or it will affect name indices
         for (var entry : variables.entrySet()) {
-            unknownVariables.put(entry.getKey(), entry.getValue().a);
+            // invisible this argument to instance methods is null
+            if (entry.getValue().a != null) {
+                unknownVariables.put(entry.getKey(), entry.getValue().a);
+            }
         }
 
         return assignUnknownVariableNames(unknownVariables, null);
