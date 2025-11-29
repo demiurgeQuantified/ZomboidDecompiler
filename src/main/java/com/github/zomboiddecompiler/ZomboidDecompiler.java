@@ -38,6 +38,12 @@ public class ZomboidDecompiler {
     /// Whether to change the line mappings in the original source files to align with the decompiled source.
     private boolean remapLineNumbers = false;
 
+    private String classPatterns = "";
+
+    public void setClassPatterns(String classPatterns) {
+        this.classPatterns = classPatterns;
+    }
+
     public void setCopyDependencies(boolean copyDependencies) {
         this.copyDependencies = copyDependencies;
     }
@@ -171,9 +177,8 @@ public class ZomboidDecompiler {
         ZomboidContextSource gameSource;
         ZomboidContextSource dependencySource;
         try {
-            String PATTERNS = "zombie.*";
-            gameSource = new ZomboidContextSource(gameJar, PATTERNS, false);
-            dependencySource = new ZomboidContextSource(gameJar, PATTERNS, true);
+            gameSource = new ZomboidContextSource(gameJar, this.classPatterns, false);
+            dependencySource = new ZomboidContextSource(gameJar, this.classPatterns, true);
         } catch (IOException e) {
             log.log(e);
             log.log("Aborting decompilation due to exception while opening context source");

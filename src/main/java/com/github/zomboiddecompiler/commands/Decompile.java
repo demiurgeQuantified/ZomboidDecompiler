@@ -42,6 +42,17 @@ public class Decompile implements Callable<Integer> {
     @Parameters(index = "1", arity = "0..1")
     private Path outputPath = Paths.get("output");
 
+    @Option(
+            names = {"--class-pattern"},
+            description = "Patterns to select classes to decompile. "
+            + "Patterns take the format of 'package.subpackage.classname'. "
+            + "Multiple patterns are separated with commas. "
+            + "A pattern ending in * will decompile all classes in the specific package and its subpackages. "
+            + "A pattern prefixed with - is a negative pattern: "
+            + "any class that matches a negative pattern is not decompiled even if it matches a positive pattern."
+    )
+    private String classPatterns = "zombie.*";
+
     @Option(names = "-vf", arity = "2", description = "Argument name and value to pass through to Vineflower. " +
             "Can be specified multiple times to pass multiple arguments. " +
             "Leading dashes should not be included in the argument name.")
@@ -188,6 +199,8 @@ public class Decompile implements Callable<Integer> {
         decompiler.setJarGame(jarGame);
         decompiler.setAddDocstrings(addDocstrings);
         decompiler.setRemapLineNumbers(remapLineNumbers);
+        decompiler.setClassPatterns(classPatterns);
+
         decompiler.decompile(inputPath, outputPath, argsList);
 
         return 0;
