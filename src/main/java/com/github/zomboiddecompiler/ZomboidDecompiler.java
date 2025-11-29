@@ -142,12 +142,6 @@ public class ZomboidDecompiler {
             }
         }
 
-        Path zombieDirectory = gamePath.resolve("zombie");
-        if (!Files.exists(zombieDirectory) || !Files.isDirectory(zombieDirectory)) {
-            log.log("Zombie directory does not exist. Aborting decompilation.");
-            return;
-        }
-
         if (Files.exists(outputPath)) {
             FileUtils.clearDirectory(outputPath);
         } else {
@@ -161,8 +155,10 @@ public class ZomboidDecompiler {
         }
 
         Path gameJar = gamePath.resolve("projectzomboid.jar");
-
-        assert Files.isRegularFile(gameJar);
+        if (!Files.isRegularFile(gameJar)) {
+            log.log("projectzomboid.jar not found, aborting");
+            return;
+        }
 
         if (jarGame) {
             try {
