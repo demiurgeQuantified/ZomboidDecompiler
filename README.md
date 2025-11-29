@@ -28,6 +28,15 @@ The decompiled source code will be written to `output/`, along with the dependen
 - Renaming of other variables according to type to enhance readability.
 - Line number remapping for remote debugging.
 
+## Version compatibility chart
+Sometimes the game changes too much for Zomboid Decompiler to reasonably maintain compatibility with older versions.
+Downloads for the latest version supporting certain game versions are listed here.
+
+| Game version    | Last supporting version                                                               |
+|-----------------|---------------------------------------------------------------------------------------|
+| 42.13.0–latest  | [latest](https://github.com/demiurgeQuantified/ZomboidDecompiler/releases/latest)     |
+| unknown–42.12.3 | [v0.2.3](https://github.com/demiurgeQuantified/ZomboidDecompiler/releases/tag/v0.2.3) |
+
 ## Command Line Interface
 Launch with ``-h`` or ``--help`` for information about command line parameters.
 
