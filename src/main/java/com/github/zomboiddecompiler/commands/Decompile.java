@@ -29,7 +29,7 @@ public class Decompile implements Callable<Integer> {
     private boolean copyDependencies = true;
     @Option(names = {"--jar-game"}, description = "If true, copies the game's classes into a jar file." +
             "Useful for recompiling single files.")
-    private boolean jarGame = true;
+    private boolean jarGame = false;
 
     @Option(names = {"--remap-line-numbers"}, description = "If true, the line numbers in the original source files will " +
             "be remapped to the decompiled source line numbers. This will allow you to attach the game to a debugger. " +
