@@ -12,21 +12,22 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Stream;
 
 public class ZomboidContextSource implements IContextSource, AutoCloseable {
     private final Path jar;
     private static final String CLASS_SUFFIX = ".class";
 
-    private final Set<String> packages;
-    private final boolean invertPackages;
+    private final boolean invertPatterns;
     private final FileSystem jarFilesystem;
+
+    private final ClassPatterns patterns;
 
     @Override
     public String getName() {
-        return "Project Zomboid (inverted: " + this.invertPackages + "): " + this.jar.toString();
+        return "Project Zomboid (inverted: " + this.invertPatterns + "): " + this.jar.toString();
     }
 
     @Override
@@ -35,20 +36,7 @@ public class ZomboidContextSource implements IContextSource, AutoCloseable {
         List<String> directories = new ArrayList<>();
 
         for (Path root : jarFilesystem.getRootDirectories()) {
-            try(Stream<Path> files = Files.list(root)) {
-                for (Path directory : files.toList()) {
-                    if (!Files.isDirectory(directory)
-                            || invertPackages == packages.contains(directory.getFileName().toString())) {
-                        continue;
-                    }
-
-                    if (ZomboidDecompiler.containsClassFiles(directory)) {
-                        scanDirectory(directory, classes, directories);
-                    }
-                }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            scanDirectory(root, classes, directories);
         }
 
         return new Entries(classes, directories, new ArrayList<>(), new ArrayList<>());
@@ -58,21 +46,24 @@ public class ZomboidContextSource implements IContextSource, AutoCloseable {
         String relativePath = current.toString().replace(File.separatorChar, '/');
         // need to remove leading "/" or it writes to root of disk lol
         relativePath = relativePath.substring(1);
-        if (Files.isDirectory(current)) {
-            directories.add(relativePath);
-            try (Stream<Path> files = Files.list(current)) {
-                for (Path file : files.toList()) {
-                    if (Files.isDirectory(file)) {
+        directories.add(relativePath);
+        try (Stream<Path> files = Files.list(current)) {
+            for (Path file : files.toList()) {
+                if (Files.isDirectory(file)) {
+                    if (this.invertPatterns != this.patterns.partialMatch(file)) {
                         scanDirectory(file, classes, directories);
-                    } else if (file.getFileName().toString().endsWith(CLASS_SUFFIX)) {
-                        String fileName = file.getFileName().toString();
-                        classes.add(Entry.atBase(
-                                relativePath + "/" + fileName.substring(0, fileName.length() - CLASS_SUFFIX.length())));
                     }
+                } else if (
+                        file.getFileName().toString().endsWith(CLASS_SUFFIX)
+                        && this.invertPatterns != this.patterns.fullMatch(file)
+                ) {
+                    String fileName = file.getFileName().toString();
+                    classes.add(Entry.atBase(
+                            relativePath + "/" + fileName.substring(0, fileName.length() - CLASS_SUFFIX.length())));
                 }
-            } catch (IOException e) {
-                ZomboidDecompiler.log.log(e);
             }
+        } catch (IOException e) {
+            ZomboidDecompiler.log.log(e);
         }
     }
 
@@ -121,11 +112,150 @@ public class ZomboidContextSource implements IContextSource, AutoCloseable {
         this.jarFilesystem.close();
     }
 
-    public ZomboidContextSource(Path jar, Set<String> packages, boolean invertPackages) throws IOException {
-        assert Files.isDirectory(jar);
+    public ZomboidContextSource(Path jar, String patterns, boolean invertPatterns) throws IOException {
+        assert Files.isRegularFile(jar);
         this.jar = jar;
         this.jarFilesystem = FileSystems.newFileSystem(jar);
-        this.packages = packages;
-        this.invertPackages = invertPackages;
+        this.invertPatterns = invertPatterns;
+        this.patterns = ClassPatterns.fromString(patterns);
+    }
+
+    public static class ClassPatterns {
+        private final List<ClassPattern> positivePatterns;
+        private final List<ClassPattern> negativePatterns;
+
+        /**
+         * Tests whether a class file matches the patterns.
+         * A class matches the patterns if no negative (-) pattern matches and at least one positive pattern does.
+         * @param path Class relative to the classpath root.
+         * @return Whether the class matches the pattern.
+         */
+        public boolean fullMatch(Path path) {
+            if (path.isAbsolute()) {
+                path = path.getRoot().relativize(path);
+            }
+
+            for (ClassPattern pattern : this.negativePatterns) {
+                if (pattern.fullMatch(path)) {
+                    return false;
+                }
+            }
+
+            for (ClassPattern pattern : this.positivePatterns) {
+                if (pattern.fullMatch(path)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /**
+         * Allows matches for directories that (could) lead to full matches.
+         * @param path Class or directory relative to the classpath root.
+         * @return Whether the path matches the pattern.
+         * @see ClassPatterns#fullMatch(Path)
+         */
+        public boolean partialMatch(Path path) {
+            if (path.isAbsolute()) {
+                path = path.getRoot().relativize(path);
+            }
+
+            for (ClassPattern pattern : this.negativePatterns) {
+                if (pattern.partialMatch(path)) {
+                    return false;
+                }
+            }
+
+            for (ClassPattern pattern : this.positivePatterns) {
+                if (pattern.partialMatch(path)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static ClassPatterns fromString(String patterns) {
+            List<ClassPattern> positivePatterns = new ArrayList<>();
+            List<ClassPattern> negativePatterns = new ArrayList<>();
+            for (String pattern : patterns.split(",")) {
+                if (pattern.startsWith("-")) {
+                    negativePatterns.add(ClassPattern.fromString(pattern.substring(1)));
+                } else {
+                    positivePatterns.add(ClassPattern.fromString(pattern));
+                }
+            }
+
+            return new ClassPatterns(positivePatterns, negativePatterns);
+        }
+
+        private ClassPatterns(final List<ClassPattern> positivePatterns, final List<ClassPattern> negativePatterns) {
+            this.positivePatterns = positivePatterns;
+            this.negativePatterns = negativePatterns;
+        }
+    }
+
+    public static class ClassPattern {
+        private final List<String> elements;
+        private final boolean isWildcard;
+
+        /**
+         * Tests whether a class file matches the pattern.
+         * @param path Class relative to the classpath root.
+         * @return Whether the class matches the pattern.
+         */
+        public boolean fullMatch(Path path) {
+            if (this.isWildcard) {
+                return path.startsWith(String.join(File.separator, elements));
+            }
+
+            return path.toString().equals(String.join(File.separator, elements));
+        }
+
+        /**
+         * Allows matches for directories that (could) lead to full matches.
+         * @param path Class or directory relative to the classpath root.
+         * @return Whether the path matches the pattern.
+         * @see ClassPattern#partialMatch(Path)
+         */
+        public boolean partialMatch(Path path) {
+            if (path.getNameCount() < elements.size()) {
+                for (int i = 1; i < path.getNameCount(); i++) {
+                    if (!path.getName(i).toString().equals(elements.get(i))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            if (this.isWildcard) {
+                return path.startsWith(String.join(File.separator, elements));
+            }
+
+            return fullMatch(path);
+        }
+
+        public static ClassPattern fromString(final String pattern) {
+            final List<String> elements = new ArrayList<>(
+                    Arrays.asList(pattern.split("\\."))
+            );
+
+            boolean isWildcard = false;
+            if (elements.get(elements.size() - 1).equals("*")) {
+                elements.remove(elements.size() - 1);
+                isWildcard = true;
+            }
+
+            return new ClassPattern(
+                    elements,
+                    isWildcard
+            );
+        }
+
+        private ClassPattern(List<String> elements, boolean isWildcard) {
+            this.elements = elements;
+            this.isWildcard = isWildcard;
+        }
     }
 }

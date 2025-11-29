@@ -171,9 +171,9 @@ public class ZomboidDecompiler {
         ZomboidContextSource gameSource;
         ZomboidContextSource dependencySource;
         try {
-            Set<String> WANTED_PACKAGES = Set.of("zombie", "generation");
-            gameSource = new ZomboidContextSource(gameJar, WANTED_PACKAGES, false);
-            dependencySource = new ZomboidContextSource(gameJar, WANTED_PACKAGES, true);
+            String PATTERNS = "zombie.*";
+            gameSource = new ZomboidContextSource(gameJar, PATTERNS, false);
+            dependencySource = new ZomboidContextSource(gameJar, PATTERNS, true);
         } catch (IOException e) {
             log.log(e);
             log.log("Aborting decompilation due to exception while opening context source");
