@@ -186,8 +186,8 @@ public class ZomboidDecompiler {
                 .output(resultSaver)
                 .option(IFernflowerPreferences.ASCII_STRING_CHARACTERS, true)
                 .option(IFernflowerPreferences.BANNER,
-                        String.format("// Decompiled on %tc with Zomboid Decompiler v%d.%d.%d using Vineflower.\n",
-                                      System.currentTimeMillis(), VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH))
+                        String.format("// Decompiled with Zomboid Decompiler v%d.%d.%d using Vineflower.\n",
+                                      VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH))
                 .option(IFernflowerPreferences.ERROR_MESSAGE, "Please report this to the Zomboid Decompiler issue tracker at https://github.com/demiurgeQuantified/ZomboidDecompiler/issues with the file name and game version.")
                 //.option("log-level", "warn")
                 .libraries(dependencySource)
