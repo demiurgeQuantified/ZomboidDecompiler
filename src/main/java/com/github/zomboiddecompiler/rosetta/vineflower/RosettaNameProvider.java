@@ -4,6 +4,7 @@ import com.github.zomboiddecompiler.rosetta.RosettaExecutable;
 import com.github.zomboiddecompiler.rosetta.RosettaMethod;
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
 import org.jetbrains.java.decompiler.struct.StructClass;
+import org.jetbrains.java.decompiler.struct.StructMethod;
 import org.jetbrains.java.decompiler.struct.gen.VarType;
 import org.jetbrains.java.decompiler.util.Pair;
 
@@ -13,6 +14,7 @@ import java.util.*;
 public class RosettaNameProvider extends AbstractRosettaNameProvider {
     private final RosettaExecutable executable;
     private final StructClass vineflowerClass;
+    private final StructMethod vineflowerMethod;
 
     /**
      * Gets the 'true' index of a variable from its 'raw' index.
@@ -43,6 +45,11 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
 
     @Override
     public Map<VarVersionPair, String> rename(Map<VarVersionPair, Pair<VarType, String>> variables) {
+        var localVars = vineflowerMethod.getLocalVariableAttr();
+        if (localVars != null) {
+            return localVars.getMapNames();
+        }
+
         Map<VarVersionPair, VarType> unknownVariables = new LinkedHashMap<>();
         Set<String> takenNames = new HashSet<>();
 
@@ -64,6 +71,11 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
 
     @Override
     public String renameAbstractParameter(String name, int index) {
+        var localVars = vineflowerMethod.getLocalVariableAttr();
+        if (localVars != null) {
+            return name;
+        }
+
         if (!name.matches("^var\\d+$")) {
             return name;
         }
@@ -77,9 +89,10 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
         return renameAbstractParameter(name, index);
     }
 
-    public RosettaNameProvider(RosettaExecutable executable, StructClass clazz) {
+    public RosettaNameProvider(RosettaExecutable executable, StructClass clazz, StructMethod method) {
         this.executable = executable;
         this.vineflowerClass = clazz;
+        this.vineflowerMethod = method;
     }
 }
 

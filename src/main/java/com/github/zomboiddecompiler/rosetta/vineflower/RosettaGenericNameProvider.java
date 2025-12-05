@@ -1,6 +1,7 @@
 package com.github.zomboiddecompiler.rosetta.vineflower;
 
 import org.jetbrains.java.decompiler.modules.decompiler.vars.VarVersionPair;
+import org.jetbrains.java.decompiler.struct.StructMethod;
 import org.jetbrains.java.decompiler.struct.gen.VarType;
 import org.jetbrains.java.decompiler.util.Pair;
 
@@ -11,6 +12,11 @@ import java.util.Map;
 public class RosettaGenericNameProvider extends AbstractRosettaNameProvider {
     @Override
     public Map<VarVersionPair, String> rename(Map<VarVersionPair, Pair<VarType, String>> variables) {
+        var localVars = method.getLocalVariableAttr();
+        if (localVars != null) {
+            return localVars.getMapNames();
+        }
+
         Map<VarVersionPair, VarType> unknownVariables = new LinkedHashMap<>();
         // TODO: if instance method, name of first variable doesn't matter
         // it should not be added in this case or it will affect name indices
@@ -23,4 +29,10 @@ public class RosettaGenericNameProvider extends AbstractRosettaNameProvider {
 
         return assignUnknownVariableNames(unknownVariables, null);
     }
+
+    public RosettaGenericNameProvider(StructMethod method) {
+        this.method = method;
+    }
+
+    private final StructMethod method;
 }

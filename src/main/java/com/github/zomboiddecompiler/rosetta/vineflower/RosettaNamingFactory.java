@@ -17,23 +17,23 @@ public class RosettaNamingFactory implements IVariableNamingFactory {
     public @NotNull IVariableNameProvider createFactory(StructMethod method) {
         RosettaClass rosettaClass = classes.get(method.getClassQualifiedName());
         if (rosettaClass == null) {
-            return DEFAULT;
+            return new RosettaGenericNameProvider(method);
         }
 
         RosettaExecutable executable = VineflowerUtils.getMatchingExecutable(rosettaClass, method);
 
         if (executable == null) {
-            return DEFAULT;
+            return new RosettaGenericNameProvider(method);
         }
 
-        return new RosettaNameProvider(executable,
-                                       DecompilerContext.getContextProperty(DecompilerContext.CURRENT_CLASS));
+        return new RosettaNameProvider(
+                executable,
+                DecompilerContext.getContextProperty(DecompilerContext.CURRENT_CLASS),
+                method
+        );
     }
 
     private Map<String, RosettaClass> classes;
-
-    /// Generic variable name provider for when there is no rosetta data
-    private static final IVariableNameProvider DEFAULT = new RosettaGenericNameProvider();
 
     void addClassesFromNamespaces(List<RosettaPackage> namespaces) {
         classes = VineflowerUtils.buildClassMap(namespaces);
