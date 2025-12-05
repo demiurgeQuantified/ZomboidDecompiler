@@ -8,7 +8,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.*;
 import java.util.*;
-import java.util.stream.Stream;
 
 import com.github.zomboiddecompiler.rosetta.RosettaPackage;
 import com.github.zomboiddecompiler.rosetta.RosettaParser;
@@ -29,8 +28,6 @@ public class ZomboidDecompiler {
     public static final int VERSION_MINOR = 3;
     public static final int VERSION_PATCH = 0;
 
-    /// Whether to make a copy of all detected dependencies to output/dependencies
-    private boolean copyDependencies = false;
     /// Whether to create a jar file containing all detected source files.
     private boolean jarGame = false;
     /// Whether to add docstrings to objects that have appropriate Rosetta data.
@@ -44,10 +41,6 @@ public class ZomboidDecompiler {
         this.classPatterns = classPatterns;
     }
 
-    public void setCopyDependencies(boolean copyDependencies) {
-        this.copyDependencies = copyDependencies;
-    }
-
     public void setJarGame(boolean jarGame) {
         this.jarGame = jarGame;
     }
@@ -59,71 +52,6 @@ public class ZomboidDecompiler {
     public void setRemapLineNumbers(boolean remapLineNumbers) {
         this.remapLineNumbers = remapLineNumbers;
     }
-
-    /**
-     * Recursively scans a directory for any .class files.
-     * @param directory The directory to scan.
-     * @return Whether the directory contains any class files.
-     */
-    static boolean containsClassFiles(Path directory) {
-        assert Files.isDirectory(directory);
-
-        try(Stream<Path> files = Files.list(directory)) {
-            return files.anyMatch(path ->
-                Files.isDirectory(path) ? containsClassFiles(path) : path.getFileName().toString().endsWith(".class"));
-        } catch (IOException e) {
-            log.log(e);
-            return false;
-        }
-    }
-
-    private boolean copyDependencies(List<Path> dependencies, Path outDirectory) {
-        if (Files.exists(outDirectory)) {
-            FileUtils.clearDirectory(outDirectory);
-        } else {
-            try {
-                Files.createDirectory(outDirectory);
-            } catch (IOException e) {
-                log.log(e);
-                return false;
-            }
-        }
-
-        try {
-            for (Path dependency : dependencies) {
-                String dependencyName = dependency.getFileName().toString();
-                FileUtils.copyFileOrDirectory(dependency, outDirectory.resolve(dependencyName));
-            }
-        } catch (IOException e) {
-            log.log(e);
-        }
-        return true;
-    }
-
-    Set<String> BAD_DEPENDENCY_NAMES = Set.of("zombie", "media", "steamapps", "mods", "Workshop");
-
-    private List<Path> findDependencies(Path dir) {
-        List<Path> dependencies = new ArrayList<>();
-        try(Stream<Path> files = Files.list(dir)) {
-            files.filter(
-                        path -> !BAD_DEPENDENCY_NAMES.contains(
-                                path.getFileName().toString()))
-                .forEach(
-                        path -> {
-                            if (path.getFileName().toString().endsWith(".jar"))
-                            {
-                                log.log("Discovered dependency: " + path);
-                                dependencies.add(path);
-                            }
-                        }
-                );
-        } catch (IOException e) {
-            log.log(e);
-        }
-        return dependencies;
-    }
-
-    private final Set<String> BAD_CODE_DIRECTORY_NAMES = Set.of("media", "steamapps", "mods", "Workshop");
 
     /**
      * Decompiles the game.

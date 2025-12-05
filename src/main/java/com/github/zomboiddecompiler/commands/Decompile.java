@@ -25,8 +25,6 @@ public class Decompile implements Callable<Integer> {
     @Option(names = {"--log-path"}, description = "Path to a folder to write log files in.")
     private File logPath = new File("logs");
 
-    @Option(names = {"--copy-dependencies"}, description = "Whether to copy all game dependencies to the output folder.")
-    private boolean copyDependencies = true;
     @Option(names = {"--jar-game"}, description = "If true, copies the game's classes into a jar file." +
             "Useful for recompiling single files.")
     private boolean jarGame = false;
@@ -195,7 +193,6 @@ public class Decompile implements Callable<Integer> {
         ZomboidDecompiler.log = new OutLogger(ZomboidDecompiler.log);
 
         ZomboidDecompiler decompiler = new ZomboidDecompiler();
-        decompiler.setCopyDependencies(copyDependencies);
         decompiler.setJarGame(jarGame);
         decompiler.setAddDocstrings(addDocstrings);
         decompiler.setRemapLineNumbers(remapLineNumbers);
