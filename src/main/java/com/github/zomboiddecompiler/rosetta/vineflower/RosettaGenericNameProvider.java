@@ -15,7 +15,7 @@ public class RosettaGenericNameProvider extends AbstractRosettaNameProvider {
         // TODO: if instance method, name of first variable doesn't matter
         // it should not be added in this case or it will affect name indices
         for (var entry : variables.entrySet()) {
-            // invisible this argument to instance methods is null
+            // FIXME: i really don't know why this is null now and it probably breaks stuff with obfuscated code
             if (entry.getValue().a != null) {
                 unknownVariables.put(entry.getKey(), entry.getValue().a);
             }

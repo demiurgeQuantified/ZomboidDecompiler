@@ -43,7 +43,6 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
 
     @Override
     public Map<VarVersionPair, String> rename(Map<VarVersionPair, Pair<VarType, String>> variables) {
-        Map<VarVersionPair, String> result = new LinkedHashMap<>();
         Map<VarVersionPair, VarType> unknownVariables = new LinkedHashMap<>();
         Set<String> takenNames = new HashSet<>();
 
@@ -51,30 +50,23 @@ public class RosettaNameProvider extends AbstractRosettaNameProvider {
             VarVersionPair pair = entry.getKey();
             int index = getTrueVariableIndex(pair.var);
 
-            if (index == -1) {
-                assert !(executable instanceof RosettaMethod method && method.isStatic());
-                result.put(pair, "this");
-            } else if (index < executable.getParameters().size()) {
-                String name = executable.getParameters().get(index).getName();
-                name = VineflowerUtils.renameParameterIfNeeded(vineflowerClass, name);
-                result.put(pair, name);
-                takenNames.add(name);
-            } else {
-                // invisible this argument to instance methods is null
+            // don't rename parameters, renameParameter already got them
+            if (index >= executable.getParameters().size()) {
+                // FIXME: i really don't know why this is null now and it probably breaks stuff with obfuscated code
                 if (entry.getValue().a != null) {
                     unknownVariables.put(pair, entry.getValue().a);
                 }
             }
         }
 
-        result.putAll(
-                assignUnknownVariableNames(unknownVariables, takenNames));
-
-        return result;
+        return assignUnknownVariableNames(unknownVariables, takenNames);
     }
 
     @Override
     public String renameAbstractParameter(String name, int index) {
+        if (!name.matches("^var\\d+$")) {
+            return name;
+        }
         index = getTrueVariableIndex(index);
         name = executable.getParameters().get(index).getName();
         return VineflowerUtils.renameParameterIfNeeded(vineflowerClass, name);
