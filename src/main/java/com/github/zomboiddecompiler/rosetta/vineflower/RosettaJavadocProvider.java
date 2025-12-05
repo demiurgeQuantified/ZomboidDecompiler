@@ -3,11 +3,15 @@ package com.github.zomboiddecompiler.rosetta.vineflower;
 import com.github.zomboiddecompiler.rosetta.*;
 import net.fabricmc.fernflower.api.IFabricJavadocProvider;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.java.decompiler.code.CodeConstants;
 import org.jetbrains.java.decompiler.struct.StructClass;
 import org.jetbrains.java.decompiler.struct.StructField;
 import org.jetbrains.java.decompiler.struct.StructMethod;
+import org.jetbrains.java.decompiler.struct.attr.StructMethodParametersAttribute;
 
 import java.util.*;
+
+import static org.jetbrains.java.decompiler.struct.attr.StructGeneralAttribute.ATTRIBUTE_METHOD_PARAMETERS;
 
 public class RosettaJavadocProvider implements IFabricJavadocProvider {
     private Map<String, RosettaClass> classes = new HashMap<>();
@@ -75,7 +79,7 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
         JavadocBuilder javadoc = new JavadocBuilder();
         javadoc.append(executable.getNotes());
 
-        javadoc.append(getParameterDocs(clazz, executable));
+        javadoc.append(getParameterDocs(method, executable));
 
         if (executable.getReturn() != RosettaReturn.VOID) {
             RosettaReturn returns = executable.getReturn();
@@ -99,16 +103,38 @@ public class RosettaJavadocProvider implements IFabricJavadocProvider {
         this.classes = VineflowerUtils.buildClassMap(classes);
     }
 
-    private String getParameterDocs(StructClass clazz, RosettaExecutable executable) {
+    private String getParameterName(StructMethod method, int index) {
+        if (!method.hasModifier(CodeConstants.ACC_STATIC)
+                && !method.getName().equals(CodeConstants.INIT_NAME)
+                && !method.getName().equals(CodeConstants.CLINIT_NAME)) {
+            index += 1;
+        }
+
+        if (method.getLocalVariableAttr() != null) {
+            return method.getLocalVariableAttr().getVariables().toList().get(index).getName();
+        } else {
+            StructMethodParametersAttribute parameters = method.getAttribute(ATTRIBUTE_METHOD_PARAMETERS);
+            if (parameters != null) {
+                return parameters.getEntries().get(index).myName;
+            }
+        }
+
+        // FIXME: interfaces don't keep their MethodParameters and their methods don't have code
+        //  so there's no way to get their parameter names :(
+        //  the parameter rename doesn't run until AFTER javadoc
+        return "ERROR";
+    }
+
+    private String getParameterDocs(StructMethod method, RosettaExecutable executable) {
         StringBuilder parameterBuilder = new StringBuilder();
 
         boolean anyNotes = false;
-        for (RosettaParameter parameter : executable.getParameters()) {
+        for (int i = 0; i < executable.getParameters().size(); i++) {
+            RosettaParameter parameter = executable.getParameters().get(i);
             parameterBuilder.append("\n");
 
             parameterBuilder.append("@param ")
-                    // rename for consistency with the code
-                    .append(VineflowerUtils.renameParameterIfNeeded(clazz, parameter.getName()));
+                    .append(this.getParameterName(method, i));
 
             String notes = parameter.getNotes();
             if (!notes.isBlank()) {
