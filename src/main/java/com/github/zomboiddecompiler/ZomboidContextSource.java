@@ -206,6 +206,10 @@ public class ZomboidContextSource implements IContextSource, AutoCloseable {
          * @return Whether the class matches the pattern.
          */
         public boolean fullMatch(Path path) {
+            if (this.isWildcard && elements.isEmpty()) {
+                return true;
+            }
+
             if (this.isWildcard) {
                 return path.startsWith(String.join(File.separator, elements));
             }
@@ -217,9 +221,13 @@ public class ZomboidContextSource implements IContextSource, AutoCloseable {
          * Allows matches for directories that (could) lead to full matches.
          * @param path Class or directory relative to the classpath root.
          * @return Whether the path matches the pattern.
-         * @see ClassPattern#partialMatch(Path)
+         * @see ClassPattern#fullMatch(Path)
          */
         public boolean partialMatch(Path path) {
+            if (this.isWildcard && elements.isEmpty()) {
+                return true;
+            }
+
             if (path.getNameCount() < elements.size()) {
                 for (int i = 1; i < path.getNameCount(); i++) {
                     if (!path.getName(i).toString().equals(elements.get(i))) {
