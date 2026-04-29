@@ -3,7 +3,7 @@ import com.github.zomboiddecompiler.rosetta.vineflower.RosettaPlugin;
 module com.github.zomboiddecompiler {
     requires org.jetbrains.annotations;
     requires org.json;
-    requires vineflower;
+    requires org.jetbrains.java.decompiler;
     requires info.picocli;
     requires java.compiler;
     requires org.objectweb.asm;
