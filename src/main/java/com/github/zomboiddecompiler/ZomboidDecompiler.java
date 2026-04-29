@@ -26,7 +26,7 @@ public class ZomboidDecompiler {
 
     public static final int VERSION_MAJOR = 0;
     public static final int VERSION_MINOR = 3;
-    public static final int VERSION_PATCH = 0;
+    public static final int VERSION_PATCH = 1;
 
     /// Whether to create a jar file containing all detected source files.
     private boolean jarGame = false;
