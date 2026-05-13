@@ -108,14 +108,12 @@ public class ZomboidContextSource implements IContextSource, AutoCloseable {
     }
 
     @Override
-    public void close() throws IOException {
-        this.jarFilesystem.close();
-    }
+    public void close() {}
 
-    public ZomboidContextSource(Path jar, String patterns, boolean invertPatterns) throws IOException {
+    public ZomboidContextSource(Path jar, FileSystem jarFilesystem, String patterns, boolean invertPatterns) {
         assert Files.isRegularFile(jar);
         this.jar = jar;
-        this.jarFilesystem = FileSystems.newFileSystem(jar);
+        this.jarFilesystem = jarFilesystem;
         this.invertPatterns = invertPatterns;
         this.patterns = ClassPatterns.fromString(patterns);
     }

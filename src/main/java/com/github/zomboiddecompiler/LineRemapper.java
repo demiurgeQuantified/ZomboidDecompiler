@@ -26,9 +26,9 @@ package com.github.zomboiddecompiler;
 import org.objectweb.asm.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -46,20 +46,12 @@ public final class LineRemapper {
         assert Files.exists(file) && Files.isRegularFile(file);
 
         try {
-            ClassReader reader = new ClassReader(
-                    Files.newInputStream(file)
-            );
-            ClassWriter writer = new ClassWriter(0);
-            reader.accept(
-                    new ClassLineRemapper(
-                            Opcodes.ASM9,
-                            writer,
-                            new LineNumbers(mappings)),
-                    Opcodes.ASM9);
-
-            Files.copy(file, destination.resolveSibling(file.getFileName().toString() + ".backup"), StandardCopyOption.REPLACE_EXISTING);
-
-            Files.write(destination, writer.toByteArray());
+            try (InputStream is = Files.newInputStream(file)) {
+                ClassReader reader = new ClassReader(is);
+                ClassWriter writer = new ClassWriter(0);
+                reader.accept(new ClassLineRemapper(Opcodes.ASM9, writer, new LineNumbers(mappings)), 0);
+                Files.write(destination, writer.toByteArray());
+            }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
