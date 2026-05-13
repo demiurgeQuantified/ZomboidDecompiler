@@ -96,18 +96,18 @@ public class ZomboidDecompiler {
             }
         }
 
-        ZomboidResultSaver resultSaver = new ZomboidResultSaver(outputPath.resolve("source"), gamePath);
-
-        ZomboidContextSource gameSource;
-        ZomboidContextSource dependencySource;
+        FileSystem gameJarFilesystem;
         try {
-            gameSource = new ZomboidContextSource(gameJar, this.classPatterns, false);
-            dependencySource = new ZomboidContextSource(gameJar, this.classPatterns, true);
+            gameJarFilesystem = FileSystems.newFileSystem(gameJar);
         } catch (IOException e) {
             log.log(e);
-            log.log("Aborting decompilation due to exception while opening context source");
+            log.log("Could not open jar. Aborting decompilation.");
             return;
         }
+
+        ZomboidResultSaver resultSaver = new ZomboidResultSaver(outputPath.resolve("source"), gameJarFilesystem);
+        ZomboidContextSource gameSource = new ZomboidContextSource(gameJar, gameJarFilesystem, this.classPatterns, false);
+        ZomboidContextSource dependencySource = new ZomboidContextSource(gameJar, gameJarFilesystem, this.classPatterns, true);
 
         Decompiler.Builder builder = Decompiler.builder()
                 .inputs(gameSource)
@@ -134,13 +134,21 @@ public class ZomboidDecompiler {
             builder.option(IFabricJavadocProvider.PROPERTY_NAME, new RosettaJavadocProvider());
         }
 
-        // FIXME: this can't rewrite the jar used in 42.13+
-//        if (remapLineNumbers) {
-//            // tells the decompiler to map bytecode to decompiled source lines
-//            builder.option(IFernflowerPreferences.BYTECODE_SOURCE_MAPPING, true);
-//            // use that data to remap the line numbers in the class files
-//            resultSaver.setRemapLineNumbers(true);
-//        }
+        if (remapLineNumbers) {
+            try {
+                // back up the original jar before remapping line numbers inside it
+                Path backupJar = gameJar.resolveSibling(gameJar.getFileName() + ".backup");
+                Files.copy(gameJar, backupJar, StandardCopyOption.REPLACE_EXISTING);
+                // tells the decompiler to map bytecode to decompiled source lines
+                builder.option(IFernflowerPreferences.BYTECODE_SOURCE_MAPPING, true);
+                // use that data to remap the line numbers in the class files
+                resultSaver.setRemapLineNumbers(true);
+            }
+            catch (IOException e) {
+                log.log(e);
+                log.log("Could not create jar backup. Line remapping is cancelled.");
+            }
+        }
 
         for (VineflowerArgument argument: vineflowerArgs) {
             builder.option(argument.parameter, argument.value);
@@ -154,7 +162,7 @@ public class ZomboidDecompiler {
         log.log("Decompilation complete.");
 
         try {
-            gameSource.close();
+            gameJarFilesystem.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

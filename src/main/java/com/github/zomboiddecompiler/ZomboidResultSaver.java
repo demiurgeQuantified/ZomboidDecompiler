@@ -5,6 +5,7 @@ import org.jetbrains.java.decompiler.main.extern.IResultSaver;
 import org.jetbrains.java.decompiler.util.InterpreterUtil;
 
 import java.io.*;
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
@@ -21,12 +22,12 @@ public final class ZomboidResultSaver implements IResultSaver {
 
     /// If true, when saving a decompiled source file, the corresponding .class file will be found and its line numbers will be remapped to the source file.
     private boolean remapLineNumbers = false;
-    /// Root directory of the game (ProjectZomboid/).
-    private final Path gameRoot;
+    /// File system for accessing the game's jar archive.
+    private final FileSystem jarFilesystem;
 
-    public ZomboidResultSaver(Path root, Path gameRoot) {
+    public ZomboidResultSaver(Path root, FileSystem jarFilesystem) {
         this.root = root;
-        this.gameRoot = gameRoot;
+        this.jarFilesystem = jarFilesystem;
     }
 
     public void setRemapLineNumbers(boolean remapLineNumbers) {
@@ -95,20 +96,20 @@ public final class ZomboidResultSaver implements IResultSaver {
         // i don't really like doing this here, but i can't find another place to extract the line mappings
         // mapping length is checked so that files with no code don't get remapped, as this fails
         if (remapLineNumbers && mapping.length > 0) {
-            assert this.gameRoot != null;
-
             Map<Integer, Integer> mappingMap = new LinkedHashMap<>();
             for (int i = 0; i < mapping.length; i += 2) {
                 mappingMap.put(mapping[i], mapping[i + 1]);
             }
 
-            // this actually points to a .java file, which probably doesn't exist!!
-            Path classFile = this.gameRoot.resolve(entryName);
+            // this actually points to a .java file, which doesn't exist!!
+            Path classFile = this.jarFilesystem.getPath(entryName);
             Path classDirectory = classFile.getParent();
+            String classPath = entryName.replace(this.jarFilesystem.getSeparator(), ".");
+            classPath = classPath.substring(0, classPath.length() - ".java".length());
             String className = classFile.getFileName().toString();
             className = className.substring(0, className.length() - ".java".length());
 
-            ZomboidDecompiler.log.log("Remapping line numbers in " + className);
+            ZomboidDecompiler.log.log("Remapping line numbers in " + classPath);
 
             List<Path> files;
             try (Stream<Path> fileStream = Files.list(classDirectory)) {
