@@ -10,22 +10,21 @@ Simplified decompilation tool for Project Zomboid powered by [Vineflower](https:
    - If you receive an error about not being able to find the game directory, open your command line to the `bin` folder and execute ``ZomboidDecompiler.bat "PATH"``, replacing `PATH` with the path to your game installation's `ProjectZomboid` folder.
      - Example: ``ZomboidDecompiler.bat "D:\Program Files (x86)\Steam\steamapps\common\ProjectZomboid"``
 
-The decompiled source code will be written to `output/`, along with the dependencies and game jar.
+The decompiled source code will be written to `output/`.
 
 ### Other
 1) Install [Java 17](https://www.oracle.com/fr/java/technologies/downloads/) or above.
 2) Download the latest .zip from [Releases](https://github.com/demiurgeQuantified/ZomboidDecompiler/releases/latest).
 3) Extract the zip.
-4) Open your command line to the `bin` folder and execute ``ZomboidDecompiler "PATH"``, replacing `PATH` with the path to your game installation's `ProjectZomboid` folder.
-   - Example: ``ZomboidDecompiler "D:\Program Files (x86)\Steam\steamapps\common\ProjectZomboid"``
+4) Navigate to `bin/` and run `ZomboidDecompiler`.
+   - If you receive an error about not being able to find the game directory, open your terminal and run ``ZomboidDecompiler PATH`` replacing `PATH` with the path to your game installation's `ProjectZomboid` folder.
+      - Example: ``ZomboidDecompiler "~/.steam/steam/steamapps/common/ProjectZomboid"``
 5) Wait a few minutes for decompilation to complete.
-The decompiled source code will be written to `output/`, along with the dependencies and game jar.
+The decompiled source code will be written to `output/`.
 
 ## Features
 - Single click game decompilation.
-- Automatic gathering of game dependencies as decompilation context and for future recompilation.
-- Renaming of function parameters using Rosetta data.
-- Renaming of other variables according to type to enhance readability.
+- Addition of doc comments, either scraped from the official Javadocs or community written.
 - Line number remapping for remote debugging.
 
 ## Version compatibility chart
