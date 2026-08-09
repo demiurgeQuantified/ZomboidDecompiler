@@ -56,20 +56,17 @@ public class Decompile implements Callable<Integer> {
             "Leading dashes should not be included in the argument name.")
     private String[] vineflowerArgs = new String[0];
 
-    /**
-     * Finds the path that Steam is installed to on the system.
-     * @return The path that Steam is installed to.
-     * <br> Null may be returned if Steam cannot be found.
-     * <br> It is guaranteed that the path exists and is a directory.
-     * It is not guaranteed that it actually contains a valid Steam installation.
-     * <br> The current implementation will always return null for non-Windows systems.
-     */
-    private @Nullable Path findSteamPath() {
-        if (!System.getProperty("os.name").startsWith("Windows")) {
-            // path detection isn't supported on other operating systems
+    private @Nullable Path findSteamPathLinux() {
+        Path steamPath = Paths.get(System.getProperty("user.home")).resolve(".steam/steam");
+
+        if (!Files.exists(steamPath) || !Files.isDirectory(steamPath)) {
             return null;
         }
 
+        return steamPath;
+    }
+
+    private @Nullable Path findSteamPathWindows() {
         String steamDirectory;
 
         String registryKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Valve\\Steam";
@@ -105,11 +102,29 @@ public class Decompile implements Callable<Integer> {
     }
 
     /**
+     * Finds the path that Steam is installed to on the system.
+     * @return The path that Steam is installed to.
+     * <br> Null may be returned if Steam cannot be found.
+     * <br> It is guaranteed that the path exists and is a directory.
+     * It is not guaranteed that it actually contains a valid Steam installation.
+     */
+    private @Nullable Path findSteamPath() {
+        String osName = System.getProperty("os.name");
+
+        if (osName.equals("Linux")) {
+            return findSteamPathLinux();
+        } else if (osName.startsWith("Windows")) {
+            return findSteamPathWindows();
+        }
+
+        return null;
+    }
+
+    /**
      * Finds and returns a list of steam library paths detected on the system.
      * @return List of steam library paths.
      * <br> The paths are guaranteed to exist and be directories, but may not be properly structured as a steam library.
      * <br> It is not guaranteed to contain every steam library on the system, or even any libraries at all.
-     * <br> The current implementation always returns an empty list for non-Windows systems.
      */
     private List<Path> findSteamLibraries() {
         Path steamPath = findSteamPath();
@@ -154,7 +169,6 @@ public class Decompile implements Callable<Integer> {
      * <br> Null may be returned if Project Zomboid cannot be found.
      * <br> It is guaranteed that the directory exists and is a directory.
      * It is not guaranteed that a valid Project Zomboid installation is actually stored there.
-     * <br> The current implementation always returns null on non-Windows systems.
      */
     private @Nullable Path findZomboidPath() {
         for (Path library : findSteamLibraries()) {
